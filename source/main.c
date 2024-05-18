@@ -23,6 +23,7 @@
 #include <orbis/Sysmodule.h>
 #include <orbis/Pad.h>
 #include "ini.h"
+#include "songmetadata.h"
 
 attr_public const char *g_pluginName = PLUGIN_NAME;
 attr_public const char *g_pluginDesc = "Plugin for loading Rock Band 4 Deluxe files, among other enhancements.";
@@ -238,6 +239,39 @@ void GameRestart_hook(void* thisGame, bool restart) {
 }
 
 //autoplay hack
+char* (*GetTitle)(SongMetadata*);
+const char* autoplaytitle = " (AUTOPLAY)";
+
+HOOK_INIT(GetTitle);
+
+char* GetTitle_hook(SongMetadata* thisMetadata) {
+    AutoplayConfiguration AutoplayConfig;
+    bool autoplay = false;
+    char aptitleint[256];
+    strcpy(aptitleint, thisMetadata->mTitle);
+    strcat(aptitleint, autoplaytitle);
+    char* aptitle = aptitleint;
+
+    bool insong = file_exists("/data/GoldHEN/RB4DX/insong.dta");
+
+    //read ini for autoplay
+    if (ini_parse(PLUGIN_CONFIG_PATH, AutoplayHandler, &AutoplayConfig) < 0) {
+        //final_printf("Can't load 'RB4DX.ini'\n");
+    }
+
+    if (ini_exists)
+        autoplay = AutoplayConfig.autoplay;
+
+    //final_printf("songtitle: %s\n", thisMetadata->mTitle);
+    //final_printf("apsongtitle: %s\n", aptitle);
+
+    if (insong && autoplay)
+        //include " (AUTOPLAY)" at the end of the song title
+        return aptitle;
+    else
+        return thisMetadata->mTitle;
+}
+
 void(*SetGameOver)(void*, bool);
 
 HOOK_INIT(SetGameOver);
@@ -262,7 +296,37 @@ void SetGameOver_hook(void* thisGame,  bool won) {
     return;
 }
 
+void(*ExportGameEnded)(void*, void*, void*, bool);
+
+HOOK_INIT(ExportGameEnded);
+
+void ExportGameEnded_hook(void* thisRBGameData, void* Game, void* RBSong, bool won) {
+    AutoplayConfiguration AutoplayConfig;
+    bool autoplay = false;
+
+    bool insong = file_exists("/data/GoldHEN/RB4DX/insong.dta");
+
+    //read ini for autoplay
+    if (ini_parse(PLUGIN_CONFIG_PATH, AutoplayHandler, &AutoplayConfig) < 0) {
+        final_printf("Can't load 'RB4DX.ini'\n");
+    }
+
+    if (ini_exists)
+        autoplay = AutoplayConfig.autoplay;
+
+    if (insong && autoplay)
+        //show end screen but ignore score
+        HOOK_CONTINUE(ExportGameEnded, void (*)(void*, void*, void*, bool), thisRBGameData, Game, RBSong, true);
+    else if (autoplay)
+        HOOK_CONTINUE(ExportGameEnded, void (*)(void*, void*, void*, bool), thisRBGameData, Game, RBSong, false);
+    else
+        HOOK_CONTINUE(ExportGameEnded, void (*)(void*, void*, void*, bool), thisRBGameData, Game, RBSong, won);
+    
+    return;
+}
+
 void(*SetCheating)(void*, bool);
+
 HOOK_INIT(SetCheating);
 
 void SetCheating_hook(void* thisTrackWatcher, bool cheating) {
@@ -278,6 +342,29 @@ void SetCheating_hook(void* thisTrackWatcher, bool cheating) {
         autoplay = AutoplayConfig.autoplay;
 
     HOOK_CONTINUE(SetCheating, void (*)(void*, bool), thisTrackWatcher, autoplay);
+    return;
+}
+
+void(*RBVocalPlayerRestart)(void*, float, void*);
+void(*SetAutoplay)(void*, bool);
+
+HOOK_INIT(RBVocalPlayerRestart);
+
+void RBVocalPlayerRestart_hook(void* thisRBVocalPlayer, float time, void* song) {
+    AutoplayConfiguration AutoplayConfig;
+    bool autoplay = false;
+
+    //read ini for autoplay
+    if (ini_parse(PLUGIN_CONFIG_PATH, AutoplayHandler, &AutoplayConfig) < 0) {
+        final_printf("Can't load 'RB4DX.ini'\n");
+    }
+
+    if (ini_exists)
+        autoplay = AutoplayConfig.autoplay;
+
+    SetAutoplay(thisRBVocalPlayer, autoplay);
+
+    HOOK_CONTINUE(RBVocalPlayerRestart, void (*)(void*, float, void*), thisRBVocalPlayer, time, song);
     return;
 }
 
@@ -356,15 +443,22 @@ int32_t attr_public module_start(size_t argc, const void *args)
     //DataReadFile = (void*)(procInfo.base_address + 0x002205e0);
     NewFile = (void*)(procInfo.base_address + 0x00376d40);
     GameRestart = (void*)(procInfo.base_address + 0x00a46710);
+    GetTitle = (void*)(procInfo.base_address + 0x00f28d20);
     SetMusicSpeed = (void*)(procInfo.base_address + 0x00a470e0);
     SetGameOver = (void*)(procInfo.base_address + 0x00a48790);
     SetCheating = (void*)(procInfo.base_address + 0x0122dfc0);
+    SetAutoplay = (void*)(procInfo.base_address + 0x00a65680);
+    RBVocalPlayerRestart = (void*)(procInfo.base_address + 0x00a622f0);
+    ExportGameEnded = (void*)(procInfo.base_address + 0x009648d0);
     TscePadSetLightBar = (void*)(procInfo.base_address + 0x012450d0);
 
     // apply all hooks
     HOOK(GameRestart);
     HOOK(SetGameOver);
     HOOK(SetCheating);
+    HOOK(GetTitle);
+    HOOK(RBVocalPlayerRestart);
+    HOOK(ExportGameEnded);
     HOOK(NewFile);
     HOOK(TscePadSetLightBar);
     //HOOK(DataReadFile);
@@ -379,6 +473,9 @@ int32_t attr_public module_stop(size_t argc, const void *args)
     UNHOOK(GameRestart);
     UNHOOK(SetGameOver);
     UNHOOK(SetCheating);
+    UNHOOK(GetTitle);
+    UNHOOK(RBVocalPlayerRestart);
+    UNHOOK(ExportGameEnded);
     UNHOOK(NewFile);
     UNHOOK(TscePadSetLightBar);
     //UNHOOK(DataReadFile);

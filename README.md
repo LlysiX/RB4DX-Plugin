@@ -1,5 +1,5 @@
 # RB4DX-Plugin
-GoldHEN Plugin used for loading RB4DX flies, among other enhancements
+GoldHEN Plugin used for loading RB4DX files, among other enhancements
 
 ## Building
 
