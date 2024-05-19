@@ -7,4 +7,4 @@ Install the [OpenOrbis PS4 Toolchain](https://github.com/OpenOrbis/OpenOrbis-PS4
 
 ## Included Dependencies
 
-[inih](https://github.com/benhoyt/inih) - ini parser
+None

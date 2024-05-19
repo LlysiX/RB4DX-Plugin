@@ -22,7 +22,6 @@
 #include <orbis/libkernel.h>
 #include <orbis/Sysmodule.h>
 #include <orbis/Pad.h>
-#include "ini.h"
 #include "songmetadata.h"
 
 attr_public const char *g_pluginName = PLUGIN_NAME;
@@ -30,53 +29,18 @@ attr_public const char *g_pluginDesc = "Plugin for loading Rock Band 4 Deluxe fi
 attr_public const char *g_pluginAuth = "LysiX";
 attr_public uint32_t g_pluginVersion = 0x00000100; // 1.00
 
-//notification ini reader
-typedef struct
-{
-    bool NotifyColored;
-} NotifyConfiguration;
-bool ini_exists;
-static int NotifyHandler(void* user, const char* section, const char* name,
-    const char* value)
-{
-    NotifyConfiguration* pconfig = (NotifyConfiguration*)user;
-
-#define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
-    if (MATCH("Settings", "NotifyColored")) {
-        if (strcmp(value, "true") == 0) {
-            pconfig->NotifyColored = true;
-        }
-        else {
-            pconfig->NotifyColored = false;
-        }
-    }
-    else {
-        return 0;  /* unknown section/name, error */
-    }
-    return 1;
-}
-
 bool file_exists(const char* filename) {
     struct stat buff;
     return stat(filename, &buff) == 0 ? true : false;
 }
 
 void DoNotificationStatic(const char* text) {
-    NotifyConfiguration NotifyConfig;
-    bool NotifyColored = false;
-    bool NotifyColoredfile = file_exists("/data/GoldHEN/RB4DX/notifycolored.ini");
-    //read ini for notify color
-    if (ini_parse(PLUGIN_CONFIG_PATH, NotifyHandler, &NotifyConfig) < 0) {
-        final_printf("Can't load 'RB4DX.ini'\n");
-    }
-    if (ini_exists) {
-        NotifyColored = NotifyConfig.NotifyColored;
-    }
+    bool NotifyColored = file_exists("/data/GoldHEN/RB4DX/notifycolored.ini");
     OrbisNotificationRequest Buffer = { 0 };
     Buffer.useIconImageUri = 1;
     Buffer.targetId = -1;
     strcpy(Buffer.message, text);
-    if (NotifyColored || NotifyColoredfile)
+    if (NotifyColored)
         strcpy(Buffer.iconUri, "https://raw.githubusercontent.com/hmxmilohax/rock-band-3-deluxe/100069d1c2293424a659ecb4a5ddacc3b91c4f9b/dependencies/media/dx.png");
     else
         strcpy(Buffer.iconUri, "https://raw.githubusercontent.com/hmxmilohax/RB2DX-Site/7d707e0d8e6f1c47c9e1eb187237ad934f254f92/docs/apple-touch-icon.png");
@@ -84,16 +48,7 @@ void DoNotificationStatic(const char* text) {
 }
 
 void DoNotification(const char *FMT, ...) {
-    NotifyConfiguration NotifyConfig;
-    bool NotifyColored = false;
-    bool NotifyColoredfile = file_exists("/data/GoldHEN/RB4DX/notifycolored.ini");
-    //read ini for notify color
-    if (ini_parse(PLUGIN_CONFIG_PATH, NotifyHandler, &NotifyConfig) < 0) {
-        final_printf("Can't load 'RB4DX.ini'\n");
-    }
-    if (ini_exists) {
-        NotifyColored = NotifyConfig.NotifyColored;
-    }
+    bool NotifyColored = file_exists("/data/GoldHEN/RB4DX/notifycolored.ini");
     OrbisNotificationRequest Buffer = { 0 };
     va_list args;
     va_start(args, FMT);
@@ -103,56 +58,11 @@ void DoNotification(const char *FMT, ...) {
     Buffer.unk3 = 0;
     Buffer.useIconImageUri = 1;
     Buffer.targetId = -1;
-    if (NotifyColored || NotifyColoredfile)
+    if (NotifyColored)
         strcpy(Buffer.iconUri, "https://raw.githubusercontent.com/hmxmilohax/rock-band-3-deluxe/100069d1c2293424a659ecb4a5ddacc3b91c4f9b/dependencies/media/dx.png");
     else
         strcpy(Buffer.iconUri, "https://raw.githubusercontent.com/hmxmilohax/RB2DX-Site/7d707e0d8e6f1c47c9e1eb187237ad934f254f92/docs/apple-touch-icon.png");
     sceKernelSendNotificationRequest(0, &Buffer, sizeof(Buffer), 0);
-}
-
-//speedhack ini reader
-typedef struct
-{
-    float speed;
-} SpeedConfiguration;
-static int SpeedHandler(void* user, const char* section, const char* name,
-    const char* value)
-{
-    SpeedConfiguration* pconfig = (SpeedConfiguration*)user;
-
-#define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
-    if (MATCH("Settings", "SongSpeedMultiplier")) {
-        pconfig->speed = atof(value);
-    }
-    else {
-        return 0;  /* unknown section/name, error */
-    }
-    return 1;
-}
-
-//autoplay ini reader
-typedef struct
-{
-    bool autoplay;
-} AutoplayConfiguration;
-static int AutoplayHandler(void* user, const char* section, const char* name,
-    const char* value)
-{
-    AutoplayConfiguration* pconfig = (AutoplayConfiguration*)user;
-
-#define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
-    if (MATCH("Settings", "Autoplay")) {
-        if (strcmp(value, "true") == 0) {
-            pconfig->autoplay = true;
-        }
-        else {
-            pconfig->autoplay = false;
-        }
-    }
-    else {
-        return 0;  /* unknown section/name, error */
-    }
-    return 1;
 }
 
 static struct proc_info procInfo;
@@ -206,34 +116,11 @@ HOOK_INIT(GameRestart);
 
 void GameRestart_hook(void* thisGame, bool restart) {
     HOOK_CONTINUE(GameRestart, void (*)(void*, bool), thisGame, restart);
-    SpeedConfiguration SpeedConfig;
     float speed = 1.00;
-    AutoplayConfiguration AutoplayConfig;
-    bool autoplay = false;
+    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
 
     bool insong = file_exists("/data/GoldHEN/RB4DX/insong.dta");
-    bool autoplayfile = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
     bool speedfile = file_exists("/data/GoldHEN/RB4DX/speedmod.ini");
-
-    //read ini for autoplay
-    if (ini_parse(PLUGIN_CONFIG_PATH, AutoplayHandler, &AutoplayConfig) < 0) {
-        final_printf("Can't load 'RB4DX.ini'\n");
-    }
-
-    //read ini for speedhack
-    if (ini_parse(PLUGIN_CONFIG_PATH, SpeedHandler, &SpeedConfig) < 0) {
-        final_printf("Can't load 'RB4DX.ini'\n");
-    }
-
-    if (SpeedConfig.speed == 0.00)
-        SpeedConfig.speed = 1.00;
-    if (ini_exists) {
-        speed = SpeedConfig.speed;
-        autoplay = AutoplayConfig.autoplay;
-    }
-
-    if (autoplayfile)
-        autoplay = true;
 
     if (speedfile) {
         FILE* spdfptr;
@@ -267,10 +154,8 @@ const char* autoplaytitle = " (AUTOPLAY)";
 HOOK_INIT(GetTitle);
 
 char* GetTitle_hook(SongMetadata* thisMetadata) {
-    AutoplayConfiguration AutoplayConfig;
-    SpeedConfiguration SpeedConfig;
     float speed = 1.00;
-    bool autoplay = false;
+    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
     char aptitleint[256];
     strcpy(aptitleint, thisMetadata->mTitle);
     strcat(aptitleint, autoplaytitle);
@@ -281,28 +166,7 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
     strcpy(speedtitleint, thisMetadata->mTitle);
 
     bool insong = file_exists("/data/GoldHEN/RB4DX/insong.dta");
-    bool autoplayfile = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
     bool speedfile = file_exists("/data/GoldHEN/RB4DX/speedmod.ini");
-
-    //read ini for autoplay
-    if (ini_parse(PLUGIN_CONFIG_PATH, AutoplayHandler, &AutoplayConfig) < 0) {
-        //final_printf("Can't load 'RB4DX.ini'\n");
-    }
-    //read ini for speedhack
-    if (ini_parse(PLUGIN_CONFIG_PATH, SpeedHandler, &SpeedConfig) < 0) {
-        //final_printf("Can't load 'RB4DX.ini'\n");
-    }
-
-    if (SpeedConfig.speed == 0.00)
-        SpeedConfig.speed = 1.00;
-
-    if (ini_exists) {
-        speed = SpeedConfig.speed * 100;
-        autoplay = AutoplayConfig.autoplay;
-    }
-
-    if (autoplayfile)
-        autoplay = true;
 
     if (speedfile) {
         FILE* spdfptr;
@@ -321,6 +185,7 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
         //include " (AUTOPLAY)" at the end of the song title
         return aptitle;
     else if (insong && speed > 0 && speed != 100) {
+        // include " (x% Speed)" at the end of the song title
         sprintf(speedtxt, " (%.0f%% Speed)", speed);
         strcat(speedtitleint, speedtxt);
         speedtitle = speedtitleint;
@@ -336,20 +201,7 @@ void(*SetGameOver)(void*, bool);
 HOOK_INIT(SetGameOver);
 
 void SetGameOver_hook(void* thisGame,  bool won) {
-    AutoplayConfiguration AutoplayConfig;
-    bool autoplay = false;
-    bool autoplayfile = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
-
-    //read ini for autoplay
-    if (ini_parse(PLUGIN_CONFIG_PATH, AutoplayHandler, &AutoplayConfig) < 0) {
-        final_printf("Can't load 'RB4DX.ini'\n");
-    }
-
-    if (ini_exists)
-        autoplay = AutoplayConfig.autoplay;
-
-    if (autoplayfile)
-        autoplay = true;
+    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
 
     if (autoplay)
         //no winning for you, cheater
@@ -364,22 +216,8 @@ void(*ExportGameEnded)(void*, void*, void*, bool);
 HOOK_INIT(ExportGameEnded);
 
 void ExportGameEnded_hook(void* thisRBGameData, void* Game, void* RBSong, bool won) {
-    AutoplayConfiguration AutoplayConfig;
-    bool autoplay = false;
-
+    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
     bool insong = file_exists("/data/GoldHEN/RB4DX/insong.dta");
-    bool autoplayfile = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
-
-    //read ini for autoplay
-    if (ini_parse(PLUGIN_CONFIG_PATH, AutoplayHandler, &AutoplayConfig) < 0) {
-        final_printf("Can't load 'RB4DX.ini'\n");
-    }
-
-    if (ini_exists)
-        autoplay = AutoplayConfig.autoplay;
-
-    if (autoplayfile)
-        autoplay = true;
 
     if (insong && autoplay)
         //show end screen but ignore score
@@ -397,20 +235,7 @@ void(*SetCheating)(void*, bool);
 HOOK_INIT(SetCheating);
 
 void SetCheating_hook(void* thisTrackWatcher, bool cheating) {
-    AutoplayConfiguration AutoplayConfig;
-    bool autoplay = false;
-    bool autoplayfile = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
-
-    //read ini for autoplay
-        if (ini_parse(PLUGIN_CONFIG_PATH, AutoplayHandler, &AutoplayConfig) < 0) {
-            final_printf("Can't load 'RB4DX.ini'\n");
-        }
-
-    if (ini_exists)
-        autoplay = AutoplayConfig.autoplay;
-
-    if (autoplayfile)
-        autoplay = true;
+    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
 
     HOOK_CONTINUE(SetCheating, void (*)(void*, bool), thisTrackWatcher, autoplay);
     return;
@@ -422,20 +247,7 @@ void(*SetAutoplay)(void*, bool);
 HOOK_INIT(RBVocalPlayerRestart);
 
 void RBVocalPlayerRestart_hook(void* thisRBVocalPlayer, float time, void* song) {
-    AutoplayConfiguration AutoplayConfig;
-    bool autoplay = false;
-    bool autoplayfile = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
-
-    //read ini for autoplay
-    if (ini_parse(PLUGIN_CONFIG_PATH, AutoplayHandler, &AutoplayConfig) < 0) {
-        final_printf("Can't load 'RB4DX.ini'\n");
-    }
-
-    if (ini_exists)
-        autoplay = AutoplayConfig.autoplay;
-
-    if (autoplayfile)
-        autoplay = true;
+    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
 
     SetAutoplay(thisRBVocalPlayer, autoplay);
 
@@ -507,8 +319,6 @@ int32_t attr_public module_start(size_t argc, const void *args)
         final_printf("This plugin is only compatible with version 02.21 of Rock Band 4.\n");
         return 0;
     }
-
-    ini_exists = file_exists(PLUGIN_CONFIG_PATH);
 
     final_printf("Applying RB4DX hooks...\n");
     DoNotificationStatic("RB4DX Plugin loaded!");
