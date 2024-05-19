@@ -332,20 +332,20 @@ int32_t attr_public module_start(size_t argc, const void *args)
     GameRestart = (void*)(procInfo.base_address + 0x00a46710);
     GetTitle = (void*)(procInfo.base_address + 0x00f28d20);
     SetMusicSpeed = (void*)(procInfo.base_address + 0x00a470e0);
-    SetGameOver = (void*)(procInfo.base_address + 0x00a48790);
-    SetCheating = (void*)(procInfo.base_address + 0x0122dfc0);
-    SetAutoplay = (void*)(procInfo.base_address + 0x00a65680);
-    RBVocalPlayerRestart = (void*)(procInfo.base_address + 0x00a622f0);
-    ExportGameEnded = (void*)(procInfo.base_address + 0x009648d0);
+    //SetGameOver = (void*)(procInfo.base_address + 0x00a48790);
+    //SetCheating = (void*)(procInfo.base_address + 0x0122dfc0);
+    //SetAutoplay = (void*)(procInfo.base_address + 0x00a65680);
+    //RBVocalPlayerRestart = (void*)(procInfo.base_address + 0x00a622f0);
+    //ExportGameEnded = (void*)(procInfo.base_address + 0x009648d0);
     TscePadSetLightBar = (void*)(procInfo.base_address + 0x012450d0);
 
     // apply all hooks
     HOOK(GameRestart);
-    HOOK(SetGameOver);
-    HOOK(SetCheating);
+    //HOOK(SetGameOver);
+    //HOOK(SetCheating);
     HOOK(GetTitle);
-    HOOK(RBVocalPlayerRestart);
-    HOOK(ExportGameEnded);
+    //HOOK(RBVocalPlayerRestart);
+    //HOOK(ExportGameEnded);
     HOOK(NewFile);
     HOOK(TscePadSetLightBar);
     //HOOK(DataReadFile);
