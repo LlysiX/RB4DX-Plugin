@@ -154,6 +154,10 @@ const char* autoplaytitle = " (AUTOPLAY)";
 HOOK_INIT(GetTitle);
 
 char* GetTitle_hook(SongMetadata* thisMetadata) {
+    bool insong = file_exists("/data/GoldHEN/RB4DX/insong.dta");
+    if (!insong)
+        return  thisMetadata->mTitle;
+    bool speedfile = file_exists("/data/GoldHEN/RB4DX/speedmod.ini");
     float speed = 1.00;
     bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
     char aptitleint[256];
@@ -165,8 +169,6 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
     char* speedtitle;
     strcpy(speedtitleint, thisMetadata->mTitle);
 
-    bool insong = file_exists("/data/GoldHEN/RB4DX/insong.dta");
-    bool speedfile = file_exists("/data/GoldHEN/RB4DX/speedmod.ini");
 
     if (speedfile) {
         FILE* spdfptr;
