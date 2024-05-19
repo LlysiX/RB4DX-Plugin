@@ -56,9 +56,15 @@ static int NotifyHandler(void* user, const char* section, const char* name,
     return 1;
 }
 
+bool file_exists(const char* filename) {
+    struct stat buff;
+    return stat(filename, &buff) == 0 ? true : false;
+}
+
 void DoNotificationStatic(const char* text) {
     NotifyConfiguration NotifyConfig;
     bool NotifyColored = false;
+    bool NotifyColoredfile = file_exists("/data/GoldHEN/RB4DX/notifycolored.ini");
     //read ini for notify color
     if (ini_parse(PLUGIN_CONFIG_PATH, NotifyHandler, &NotifyConfig) < 0) {
         final_printf("Can't load 'RB4DX.ini'\n");
@@ -70,7 +76,7 @@ void DoNotificationStatic(const char* text) {
     Buffer.useIconImageUri = 1;
     Buffer.targetId = -1;
     strcpy(Buffer.message, text);
-    if (NotifyColored)
+    if (NotifyColored || NotifyColoredfile)
         strcpy(Buffer.iconUri, "https://raw.githubusercontent.com/hmxmilohax/rock-band-3-deluxe/100069d1c2293424a659ecb4a5ddacc3b91c4f9b/dependencies/media/dx.png");
     else
         strcpy(Buffer.iconUri, "https://raw.githubusercontent.com/hmxmilohax/RB2DX-Site/7d707e0d8e6f1c47c9e1eb187237ad934f254f92/docs/apple-touch-icon.png");
@@ -80,6 +86,7 @@ void DoNotificationStatic(const char* text) {
 void DoNotification(const char *FMT, ...) {
     NotifyConfiguration NotifyConfig;
     bool NotifyColored = false;
+    bool NotifyColoredfile = file_exists("/data/GoldHEN/RB4DX/notifycolored.ini");
     //read ini for notify color
     if (ini_parse(PLUGIN_CONFIG_PATH, NotifyHandler, &NotifyConfig) < 0) {
         final_printf("Can't load 'RB4DX.ini'\n");
@@ -96,16 +103,11 @@ void DoNotification(const char *FMT, ...) {
     Buffer.unk3 = 0;
     Buffer.useIconImageUri = 1;
     Buffer.targetId = -1;
-    if (NotifyColored)
+    if (NotifyColored || NotifyColoredfile)
         strcpy(Buffer.iconUri, "https://raw.githubusercontent.com/hmxmilohax/rock-band-3-deluxe/100069d1c2293424a659ecb4a5ddacc3b91c4f9b/dependencies/media/dx.png");
     else
         strcpy(Buffer.iconUri, "https://raw.githubusercontent.com/hmxmilohax/RB2DX-Site/7d707e0d8e6f1c47c9e1eb187237ad934f254f92/docs/apple-touch-icon.png");
     sceKernelSendNotificationRequest(0, &Buffer, sizeof(Buffer), 0);
-}
-
-bool file_exists(const char* filename) {
-    struct stat buff;
-    return stat(filename, &buff) == 0 ? true : false;
 }
 
 //speedhack ini reader
@@ -209,6 +211,10 @@ void GameRestart_hook(void* thisGame, bool restart) {
     AutoplayConfiguration AutoplayConfig;
     bool autoplay = false;
 
+    bool insong = file_exists("/data/GoldHEN/RB4DX/insong.dta");
+    bool autoplayfile = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
+    bool speedfile = file_exists("/data/GoldHEN/RB4DX/speedmod.ini");
+
     //read ini for autoplay
     if (ini_parse(PLUGIN_CONFIG_PATH, AutoplayHandler, &AutoplayConfig) < 0) {
         final_printf("Can't load 'RB4DX.ini'\n");
@@ -226,19 +232,35 @@ void GameRestart_hook(void* thisGame, bool restart) {
         autoplay = AutoplayConfig.autoplay;
     }
 
+    if (autoplayfile)
+        autoplay = true;
+
+    if (speedfile) {
+        FILE* spdfptr;
+        spdfptr = fopen("/data/GoldHEN/RB4DX/speedmod.ini", "r");
+        char spdstring[100];
+        fgets(spdstring, 100, spdfptr);
+        const char* spdstringptr = spdstring;
+        speed = atof(spdstringptr);
+        fclose(spdfptr);
+    }
+
+
     if (speed > 0.00 && speed != 1.00){
         SetMusicSpeed(thisGame, speed);
         final_printf("Music speed: %.2f\n", speed);
-        DoNotification("Music Speed Set: %.2f", speed);
+        if (!insong || autoplay)
+            DoNotification("Music Speed Set: %.2f", speed);
     }
     if (autoplay) {
         final_printf("Autoplay Enabled!\n");
-        DoNotificationStatic("Autoplay Enabled!");
+        if (!insong)
+            DoNotificationStatic("Autoplay Enabled!");
     }
     return;
 }
 
-//autoplay hack
+//song title hook for reporting speedhack/autoplay
 char* (*GetTitle)(SongMetadata*);
 const char* autoplaytitle = " (AUTOPLAY)";
 
@@ -246,21 +268,51 @@ HOOK_INIT(GetTitle);
 
 char* GetTitle_hook(SongMetadata* thisMetadata) {
     AutoplayConfiguration AutoplayConfig;
+    SpeedConfiguration SpeedConfig;
+    float speed = 1.00;
     bool autoplay = false;
     char aptitleint[256];
     strcpy(aptitleint, thisMetadata->mTitle);
     strcat(aptitleint, autoplaytitle);
     char* aptitle = aptitleint;
+    char speedtitleint[256];
+    char speedtxt[256];
+    char* speedtitle;
+    strcpy(speedtitleint, thisMetadata->mTitle);
 
     bool insong = file_exists("/data/GoldHEN/RB4DX/insong.dta");
+    bool autoplayfile = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
+    bool speedfile = file_exists("/data/GoldHEN/RB4DX/speedmod.ini");
 
     //read ini for autoplay
     if (ini_parse(PLUGIN_CONFIG_PATH, AutoplayHandler, &AutoplayConfig) < 0) {
         //final_printf("Can't load 'RB4DX.ini'\n");
     }
+    //read ini for speedhack
+    if (ini_parse(PLUGIN_CONFIG_PATH, SpeedHandler, &SpeedConfig) < 0) {
+        //final_printf("Can't load 'RB4DX.ini'\n");
+    }
 
-    if (ini_exists)
+    if (SpeedConfig.speed == 0.00)
+        SpeedConfig.speed = 1.00;
+
+    if (ini_exists) {
+        speed = SpeedConfig.speed * 100;
         autoplay = AutoplayConfig.autoplay;
+    }
+
+    if (autoplayfile)
+        autoplay = true;
+
+    if (speedfile) {
+        FILE* spdfptr;
+        spdfptr = fopen("/data/GoldHEN/RB4DX/speedmod.ini", "r");
+        char spdstring[100];
+        fgets(spdstring, 100, spdfptr);
+        const char* spdstringptr = spdstring;
+        speed = atof(spdstringptr) * 100;
+        fclose(spdfptr);
+    }
 
     //final_printf("songtitle: %s\n", thisMetadata->mTitle);
     //final_printf("apsongtitle: %s\n", aptitle);
@@ -268,10 +320,17 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
     if (insong && autoplay)
         //include " (AUTOPLAY)" at the end of the song title
         return aptitle;
+    else if (insong && speed > 0 && speed != 100) {
+        sprintf(speedtxt, " (%.0f%% Speed)", speed);
+        strcat(speedtitleint, speedtxt);
+        speedtitle = speedtitleint;
+        return speedtitle;
+    }
     else
         return thisMetadata->mTitle;
 }
 
+//autoplay hack
 void(*SetGameOver)(void*, bool);
 
 HOOK_INIT(SetGameOver);
@@ -279,6 +338,7 @@ HOOK_INIT(SetGameOver);
 void SetGameOver_hook(void* thisGame,  bool won) {
     AutoplayConfiguration AutoplayConfig;
     bool autoplay = false;
+    bool autoplayfile = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
 
     //read ini for autoplay
     if (ini_parse(PLUGIN_CONFIG_PATH, AutoplayHandler, &AutoplayConfig) < 0) {
@@ -287,6 +347,9 @@ void SetGameOver_hook(void* thisGame,  bool won) {
 
     if (ini_exists)
         autoplay = AutoplayConfig.autoplay;
+
+    if (autoplayfile)
+        autoplay = true;
 
     if (autoplay)
         //no winning for you, cheater
@@ -305,6 +368,7 @@ void ExportGameEnded_hook(void* thisRBGameData, void* Game, void* RBSong, bool w
     bool autoplay = false;
 
     bool insong = file_exists("/data/GoldHEN/RB4DX/insong.dta");
+    bool autoplayfile = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
 
     //read ini for autoplay
     if (ini_parse(PLUGIN_CONFIG_PATH, AutoplayHandler, &AutoplayConfig) < 0) {
@@ -313,6 +377,9 @@ void ExportGameEnded_hook(void* thisRBGameData, void* Game, void* RBSong, bool w
 
     if (ini_exists)
         autoplay = AutoplayConfig.autoplay;
+
+    if (autoplayfile)
+        autoplay = true;
 
     if (insong && autoplay)
         //show end screen but ignore score
@@ -332,6 +399,7 @@ HOOK_INIT(SetCheating);
 void SetCheating_hook(void* thisTrackWatcher, bool cheating) {
     AutoplayConfiguration AutoplayConfig;
     bool autoplay = false;
+    bool autoplayfile = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
 
     //read ini for autoplay
         if (ini_parse(PLUGIN_CONFIG_PATH, AutoplayHandler, &AutoplayConfig) < 0) {
@@ -340,6 +408,9 @@ void SetCheating_hook(void* thisTrackWatcher, bool cheating) {
 
     if (ini_exists)
         autoplay = AutoplayConfig.autoplay;
+
+    if (autoplayfile)
+        autoplay = true;
 
     HOOK_CONTINUE(SetCheating, void (*)(void*, bool), thisTrackWatcher, autoplay);
     return;
@@ -353,6 +424,7 @@ HOOK_INIT(RBVocalPlayerRestart);
 void RBVocalPlayerRestart_hook(void* thisRBVocalPlayer, float time, void* song) {
     AutoplayConfiguration AutoplayConfig;
     bool autoplay = false;
+    bool autoplayfile = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
 
     //read ini for autoplay
     if (ini_parse(PLUGIN_CONFIG_PATH, AutoplayHandler, &AutoplayConfig) < 0) {
@@ -361,6 +433,9 @@ void RBVocalPlayerRestart_hook(void* thisRBVocalPlayer, float time, void* song) 
 
     if (ini_exists)
         autoplay = AutoplayConfig.autoplay;
+
+    if (autoplayfile)
+        autoplay = true;
 
     SetAutoplay(thisRBVocalPlayer, autoplay);
 
