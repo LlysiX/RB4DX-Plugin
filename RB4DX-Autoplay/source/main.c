@@ -72,12 +72,12 @@ HOOK_INIT(SetGameOver);
 
 void SetGameOver_hook(void* thisGame,  bool won) {
 
-    if (file_exists("/data/GoldHEN/RB4DX/notarealfile.ini")) {
+    if (file_exists("/data/GoldHEN/RB4DX/fake.ini")) {
         //for some reason this breaks scoring entirely no matter what file i put in
-        HOOK_CONTINUE(SetGameOver, void (*)(void*, bool), thisGame, true);
+        HOOK_CONTINUE(SetGameOver, void (*)(void*, bool), thisGame, false);
         return;
     }
-    HOOK_CONTINUE(SetGameOver, void (*)(void*, bool), thisGame, false);
+    HOOK_CONTINUE(SetGameOver, void (*)(void*, bool), thisGame, true);
     return;
 }
 
@@ -95,7 +95,7 @@ void(*SetCheating)(void*, bool);
 HOOK_INIT(SetCheating);
 
 void SetCheating_hook(void* thisTrackWatcher, bool cheating) {
-    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
+    bool autoplay = true;
 
     HOOK_CONTINUE(SetCheating, void (*)(void*, bool), thisTrackWatcher, autoplay);
     return;
@@ -107,7 +107,7 @@ void(*SetAutoplay)(void*, bool);
 HOOK_INIT(RBVocalPlayerRestart);
 
 void RBVocalPlayerRestart_hook(void* thisRBVocalPlayer, float time, void* song) {
-    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
+    bool autoplay = true;
 
     SetAutoplay(thisRBVocalPlayer, autoplay);
 

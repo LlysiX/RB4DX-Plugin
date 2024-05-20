@@ -197,65 +197,65 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
         return thisMetadata->mTitle;
 }
 
-//autoplay hack
-void(*SetGameOver)(void*, bool);
-
-HOOK_INIT(SetGameOver);
-
-void SetGameOver_hook(void* thisGame,  bool won) {
-    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
-
-    if (autoplay)
-        //no winning for you, cheater
-        HOOK_CONTINUE(SetGameOver, bool (*)(void*, bool), thisGame, false);
-    else
-        HOOK_CONTINUE(SetGameOver, bool (*)(void*, bool), thisGame, won);
-    return;
-}
-
-void(*ExportGameEnded)(void*, void*, void*, bool);
-
-HOOK_INIT(ExportGameEnded);
-
-void ExportGameEnded_hook(void* thisRBGameData, void* Game, void* RBSong, bool won) {
-    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
-    bool insong = file_exists("/data/GoldHEN/RB4DX/insong.dta");
-
-    if (insong && autoplay)
-        //show end screen but ignore score
-        HOOK_CONTINUE(ExportGameEnded, void (*)(void*, void*, void*, bool), thisRBGameData, Game, RBSong, true);
-    else if (autoplay)
-        HOOK_CONTINUE(ExportGameEnded, void (*)(void*, void*, void*, bool), thisRBGameData, Game, RBSong, false);
-    else
-        HOOK_CONTINUE(ExportGameEnded, void (*)(void*, void*, void*, bool), thisRBGameData, Game, RBSong, won);
-    
-    return;
-}
-
-void(*SetCheating)(void*, bool);
-
-HOOK_INIT(SetCheating);
-
-void SetCheating_hook(void* thisTrackWatcher, bool cheating) {
-    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
-
-    HOOK_CONTINUE(SetCheating, void (*)(void*, bool), thisTrackWatcher, autoplay);
-    return;
-}
-
-void(*RBVocalPlayerRestart)(void*, float, void*);
-void(*SetAutoplay)(void*, bool);
-
-HOOK_INIT(RBVocalPlayerRestart);
-
-void RBVocalPlayerRestart_hook(void* thisRBVocalPlayer, float time, void* song) {
-    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
-
-    SetAutoplay(thisRBVocalPlayer, autoplay);
-
-    HOOK_CONTINUE(RBVocalPlayerRestart, void (*)(void*, float, void*), thisRBVocalPlayer, time, song);
-    return;
-}
+////autoplay hack
+//void(*SetGameOver)(void*, bool);
+//
+//HOOK_INIT(SetGameOver);
+//
+//void SetGameOver_hook(void* thisGame,  bool won) {
+//    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
+//
+//    if (autoplay)
+//        //no winning for you, cheater
+//        HOOK_CONTINUE(SetGameOver, bool (*)(void*, bool), thisGame, false);
+//    else
+//        HOOK_CONTINUE(SetGameOver, bool (*)(void*, bool), thisGame, won);
+//    return;
+//}
+//
+//void(*ExportGameEnded)(void*, void*, void*, bool);
+//
+//HOOK_INIT(ExportGameEnded);
+//
+//void ExportGameEnded_hook(void* thisRBGameData, void* Game, void* RBSong, bool won) {
+//    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
+//    bool insong = file_exists("/data/GoldHEN/RB4DX/insong.dta");
+//
+//    if (insong && autoplay)
+//        //show end screen but ignore score
+//        HOOK_CONTINUE(ExportGameEnded, void (*)(void*, void*, void*, bool), thisRBGameData, Game, RBSong, true);
+//    else if (autoplay)
+//        HOOK_CONTINUE(ExportGameEnded, void (*)(void*, void*, void*, bool), thisRBGameData, Game, RBSong, false);
+//    else
+//        HOOK_CONTINUE(ExportGameEnded, void (*)(void*, void*, void*, bool), thisRBGameData, Game, RBSong, won);
+//    
+//    return;
+//}
+//
+//void(*SetCheating)(void*, bool);
+//
+//HOOK_INIT(SetCheating);
+//
+//void SetCheating_hook(void* thisTrackWatcher, bool cheating) {
+//    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
+//
+//    HOOK_CONTINUE(SetCheating, void (*)(void*, bool), thisTrackWatcher, autoplay);
+//    return;
+//}
+//
+//void(*RBVocalPlayerRestart)(void*, float, void*);
+//void(*SetAutoplay)(void*, bool);
+//
+//HOOK_INIT(RBVocalPlayerRestart);
+//
+//void RBVocalPlayerRestart_hook(void* thisRBVocalPlayer, float time, void* song) {
+//    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
+//
+//    SetAutoplay(thisRBVocalPlayer, autoplay);
+//
+//    HOOK_CONTINUE(RBVocalPlayerRestart, void (*)(void*, float, void*), thisRBVocalPlayer, time, song);
+//    return;
+//}
 
 //TODDO: force the readfile function to look for text format instead of binary
 
@@ -358,11 +358,11 @@ int32_t attr_public module_stop(size_t argc, const void *args)
     final_printf("Stopping plugin...\n");
     // unhook everything just in case
     UNHOOK(GameRestart);
-    UNHOOK(SetGameOver);
-    UNHOOK(SetCheating);
+    //UNHOOK(SetGameOver);
+    //UNHOOK(SetCheating);
     UNHOOK(GetTitle);
-    UNHOOK(RBVocalPlayerRestart);
-    UNHOOK(ExportGameEnded);
+    //UNHOOK(RBVocalPlayerRestart);
+    //UNHOOK(ExportGameEnded);
     UNHOOK(NewFile);
     UNHOOK(TscePadSetLightBar);
     //UNHOOK(DataReadFile);
