@@ -4,6 +4,12 @@ build/
 ps4include/
 .vscode/
 .DS_Store
+RB4DX-Autoplay/.vs/
+RB4DX-Autoplay/bin/
+RB4DX-Autoplay/build/
+RB4DX-Autoplay/ps4include/
+RB4DX-Autoplay/.vscode/
+RB4DX-Autoplay/.DS_Store
 *.elf
 *.o
 *.prx
