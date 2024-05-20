@@ -72,12 +72,12 @@ HOOK_INIT(SetGameOver);
 
 void SetGameOver_hook(void* thisGame,  bool won) {
 
-    if (file_exists("/NULL.txt")) {
+    if (file_exists("/data/GoldHEN/RB4DX/notarealfile.ini")) {
         //for some reason this breaks scoring entirely no matter what file i put in
-        HOOK_CONTINUE(SetGameOver, void (*)(void*, bool), thisGame, false);
+        HOOK_CONTINUE(SetGameOver, void (*)(void*, bool), thisGame, true);
         return;
     }
-    HOOK_CONTINUE(SetGameOver, void (*)(void*, bool), thisGame, true);
+    HOOK_CONTINUE(SetGameOver, void (*)(void*, bool), thisGame, false);
     return;
 }
 
