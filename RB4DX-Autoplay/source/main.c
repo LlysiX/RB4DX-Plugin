@@ -1,6 +1,6 @@
 /*
-    main.c - RB4DX
-    Initialisation code for the RB4DX plugin.
+    main.c - RB4DX-Autoplay
+    Initialisation code for the RB4DX autoplay plugin.
     Licensed under the GNU Lesser General Public License version 2.1, or later.
 */
 
@@ -23,7 +23,7 @@
 #include <orbis/Sysmodule.h>
 
 attr_public const char *g_pluginName = PLUGIN_NAME;
-attr_public const char *g_pluginDesc = "Plugin for loading Rock Band 4 Deluxe files, among other enhancements.";
+attr_public const char *g_pluginDesc = "Plugin for loading Rock Band 4 Deluxe autoplay";
 attr_public const char *g_pluginAuth = "LysiX";
 attr_public uint32_t g_pluginVersion = 0x00000100; // 1.00
 
@@ -81,21 +81,21 @@ void SetGameOver_hook(void* thisGame,  bool won) {
     return;
 }
 
-void(*ExportGameEnded)(void*, void*, void*, bool);
-
-HOOK_INIT(ExportGameEnded);
-
-void ExportGameEnded_hook(void* thisRBGameData, void* Game, void* RBSong, bool won) {
-    HOOK_CONTINUE(ExportGameEnded, void (*)(void*, void*, void*, bool), thisRBGameData, Game, RBSong, true);
-    return;
-}
+//void(*ExportGameEnded)(void*, void*, void*, bool);
+//
+//HOOK_INIT(ExportGameEnded);
+//
+//void ExportGameEnded_hook(void* thisRBGameData, void* Game, void* RBSong, bool won) {
+//    HOOK_CONTINUE(ExportGameEnded, void (*)(void*, void*, void*, bool), thisRBGameData, Game, RBSong, true);
+//    return;
+//}
 
 void(*SetCheating)(void*, bool);
 
 HOOK_INIT(SetCheating);
 
 void SetCheating_hook(void* thisTrackWatcher, bool cheating) {
-    bool autoplay = true;
+    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
 
     HOOK_CONTINUE(SetCheating, void (*)(void*, bool), thisTrackWatcher, autoplay);
     return;
@@ -107,7 +107,7 @@ void(*SetAutoplay)(void*, bool);
 HOOK_INIT(RBVocalPlayerRestart);
 
 void RBVocalPlayerRestart_hook(void* thisRBVocalPlayer, float time, void* song) {
-    bool autoplay = true;
+    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
 
     SetAutoplay(thisRBVocalPlayer, autoplay);
 
@@ -148,13 +148,13 @@ int32_t attr_public module_start(size_t argc, const void *args)
     SetCheating = (void*)(procInfo.base_address + 0x0122dfc0);
     SetAutoplay = (void*)(procInfo.base_address + 0x00a65680);
     RBVocalPlayerRestart = (void*)(procInfo.base_address + 0x00a622f0);
-    ExportGameEnded = (void*)(procInfo.base_address + 0x009648d0);
+    //ExportGameEnded = (void*)(procInfo.base_address + 0x009648d0);
 
     // apply all hooks
     HOOK(SetGameOver);
     HOOK(SetCheating);
     HOOK(RBVocalPlayerRestart);
-    HOOK(ExportGameEnded);
+    //HOOK(ExportGameEnded);
 
     return 0;
 }
@@ -166,6 +166,6 @@ int32_t attr_public module_stop(size_t argc, const void *args)
     UNHOOK(SetGameOver);
     UNHOOK(SetCheating);
     UNHOOK(RBVocalPlayerRestart);
-    UNHOOK(ExportGameEnded);
+    //UNHOOK(ExportGameEnded);
     return 0;
 }
