@@ -71,7 +71,7 @@ static struct proc_info procInfo;
 const char* RawfilesFolder = "/data/GoldHEN/RB4DX/";
 const char* GameRawfilesFolder = "data:/GoldHEN/RB4DX/";
 bool USTitleID = true;
-bool PrintRawfiles = true;
+bool PrintRawfiles = false;
 bool PrintArkfiles = false;
 
 typedef enum {
@@ -118,7 +118,7 @@ void GameRestart_hook(void* thisGame, bool restart) {
     HOOK_CONTINUE(GameRestart, void (*)(void*, bool), thisGame, restart);
     float speed = 1.00;
     bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
-
+    bool drunkmode = file_exists("/data/GoldHEN/RB4DX/drunkmode.ini");
     bool insong = file_exists("/data/GoldHEN/RB4DX/insong.dta");
     bool speedfile = file_exists("/data/GoldHEN/RB4DX/speedmod.ini");
 
@@ -136,7 +136,7 @@ void GameRestart_hook(void* thisGame, bool restart) {
     if (speed > 0.00 && speed != 1.00){
         SetMusicSpeed(thisGame, speed);
         final_printf("Music speed: %.2f\n", speed);
-        if (!insong || autoplay)
+        if (!insong || autoplay || drunkmode)
             DoNotification("Music Speed Set: %.2f", speed);
     }
     if (autoplay) {
@@ -150,6 +150,7 @@ void GameRestart_hook(void* thisGame, bool restart) {
 //song title hook for reporting speedhack/autoplay
 char* (*GetTitle)(SongMetadata*);
 const char* autoplaytitle = " (AUTOPLAY)";
+const char* drunkmodetitle = " (DRUNK MODE)";
 
 HOOK_INIT(GetTitle);
 
@@ -157,17 +158,25 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
     bool insong = file_exists("/data/GoldHEN/RB4DX/insong.dta");
     if (!insong)
         return  thisMetadata->mTitle;
+
     bool speedfile = file_exists("/data/GoldHEN/RB4DX/speedmod.ini");
     float speed = 1.00;
+    char speedtitleint[256];
+    char speedtxt[256];
+    char* speedtitle;
+    strcpy(speedtitleint, thisMetadata->mTitle);
+
     bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
     char aptitleint[256];
     strcpy(aptitleint, thisMetadata->mTitle);
     strcat(aptitleint, autoplaytitle);
     char* aptitle = aptitleint;
-    char speedtitleint[256];
-    char speedtxt[256];
-    char* speedtitle;
-    strcpy(speedtitleint, thisMetadata->mTitle);
+
+    bool drunkmode = file_exists("/data/GoldHEN/RB4DX/drunkmode.ini");
+    char dmtitleint[256];
+    strcpy(dmtitleint, thisMetadata->mTitle);
+    strcat(dmtitleint, drunkmodetitle);
+    char* dmtitle = dmtitleint;
 
 
     if (speedfile) {
@@ -186,6 +195,9 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
     if (insong && autoplay)
         //include " (AUTOPLAY)" at the end of the song title
         return aptitle;
+    else if (insong && drunkmode)
+        //include " (DRUNK MODE)" at the end of the song title
+        return dmtitle;
     else if (insong && speed > 0 && speed != 100) {
         // include " (x% Speed)" at the end of the song title
         sprintf(speedtxt, " (%.0f%% Speed)", speed);
