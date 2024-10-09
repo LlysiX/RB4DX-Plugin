@@ -277,6 +277,8 @@ void DataInitFuncs_hook() {
     // Rename/Move file
     Symbol_Ctor(&funcsym, "file_rename");
     DataRegisterFunc(funcsym, DataFileRename);
+    Symbol_Ctor(&funcsym, "file_move");
+    DataRegisterFunc(funcsym, DataFileRename);
 
     //add original dta functions
     HOOK_CONTINUE(DataInitFuncs, void (*)());
