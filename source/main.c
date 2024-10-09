@@ -252,23 +252,20 @@ void TscePadSetLightBar_hook(int handle, OrbisPadColor *inputColor) {
 Symbol(*Symbol_Ctor)(Symbol*, const char*);
 void(*DataInitFuncs)();
 void(*DataRegisterFunc)(Symbol, DataFunc);
-DataNode* (*DataArrayEvaluate)(DataNode*, DataArray*, int);
+DataNode* (*DataArrayEvaluate)(DataNode*, DataArray*, size_t);
 
-DataNode DataFileRename(DataArray* args) {
+DataNode* DataFileRename(DataNode* ret, DataArray* args) {
     final_printf("renaming file!\n");
     DataNode firstArg;
     DataArrayEvaluate(&firstArg, args, 1);
-    //DataNode secondArg;
-    //DataArrayEvaluate(&secondArg, args, 2);
+    DataNode secondArg;
+    DataArrayEvaluate(&secondArg, args, 2);
     //if(firstArg.type == kDataSymbol & secondArg.type == kDataSymbol)
-    //rename(firstArg.value.string, secondArg.value.string);
+    rename(firstArg.mValue.symbol, secondArg.mValue.symbol);
     final_printf("from %s\n", firstArg.mValue.symbol);
-    //final_printf("to %s\n", secondArg.mValue.symbol);
-    final_printf("type: %u\n", firstArg.mType);
-    final_printf("int: %zu\n", firstArg.mValue.value);
-    DataNode ret;
-    ret.mType = kDataInt;
-    ret.mValue.value = 1;
+    final_printf("to %s\n", secondArg.mValue.symbol);
+    ret->mType = kDataInt;
+    ret->mValue.value = 1;
     return ret;
 }
 

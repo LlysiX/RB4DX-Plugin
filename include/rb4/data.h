@@ -60,4 +60,4 @@ typedef struct _DataArray {
     ushort mLine;
 } DataArray;
 
-typedef DataNode DataFunc(DataArray*);
+typedef DataNode *DataFunc(DataNode*, DataArray*);
