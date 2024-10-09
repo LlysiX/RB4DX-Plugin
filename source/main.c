@@ -252,16 +252,20 @@ void TscePadSetLightBar_hook(int handle, OrbisPadColor *inputColor) {
 Symbol(*Symbol_Ctor)(Symbol*, const char*);
 void(*DataInitFuncs)();
 void(*DataRegisterFunc)(Symbol, DataFunc);
-DataNode*(*DataArrayEvaluate)(DataNode*, DataArray*, int);
+DataNode* (*DataArrayEvaluate)(DataNode*, DataArray*, int);
 
 DataNode DataFileRename(DataArray* args) {
     final_printf("renaming file!\n");
-    DataNode* firstArg = DataArrayEvaluate(firstArg, args, 1);
-    DataNode* secondArg = DataArrayEvaluate(secondArg, args, 2);
+    DataNode firstArg;
+    DataArrayEvaluate(&firstArg, args, 1);
+    //DataNode secondArg;
+    //DataArrayEvaluate(&secondArg, args, 2);
     //if(firstArg.type == kDataSymbol & secondArg.type == kDataSymbol)
     //rename(firstArg.value.string, secondArg.value.string);
-    final_printf("from %s\n", firstArg->mValue.symbol);
-    final_printf("to %s\n", secondArg->mValue.symbol);
+    final_printf("from %s\n", firstArg.mValue.symbol);
+    //final_printf("to %s\n", secondArg.mValue.symbol);
+    final_printf("type: %u\n", firstArg.mType);
+    final_printf("int: %zu\n", firstArg.mValue.value);
     DataNode ret;
     ret.mType = kDataInt;
     ret.mValue.value = 1;
@@ -272,9 +276,8 @@ HOOK_INIT(DataInitFuncs);
 
 void DataInitFuncs_hook() {
     // New dta functions go here
-
-    // Rename/Move file
     Symbol funcsym;
+    // Rename/Move file
     Symbol_Ctor(&funcsym, "file_rename");
     DataRegisterFunc(funcsym, DataFileRename);
 
