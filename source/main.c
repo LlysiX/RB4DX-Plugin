@@ -22,7 +22,8 @@
 #include <orbis/libkernel.h>
 #include <orbis/Sysmodule.h>
 #include <orbis/Pad.h>
-#include "songmetadata.h"
+#include "rb4/songmetadata.h"
+#include "rb4/data.h"
 
 attr_public const char *g_pluginName = PLUGIN_NAME;
 attr_public const char *g_pluginDesc = "Plugin for loading Rock Band 4 Deluxe files, among other enhancements.";
@@ -209,66 +210,6 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
         return thisMetadata->mTitle;
 }
 
-////autoplay hack
-//void(*SetGameOver)(void*, bool);
-//
-//HOOK_INIT(SetGameOver);
-//
-//void SetGameOver_hook(void* thisGame,  bool won) {
-//    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
-//
-//    if (autoplay)
-//        //no winning for you, cheater
-//        HOOK_CONTINUE(SetGameOver, bool (*)(void*, bool), thisGame, false);
-//    else
-//        HOOK_CONTINUE(SetGameOver, bool (*)(void*, bool), thisGame, won);
-//    return;
-//}
-//
-//void(*ExportGameEnded)(void*, void*, void*, bool);
-//
-//HOOK_INIT(ExportGameEnded);
-//
-//void ExportGameEnded_hook(void* thisRBGameData, void* Game, void* RBSong, bool won) {
-//    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
-//    bool insong = file_exists("/data/GoldHEN/RB4DX/insong.dta");
-//
-//    if (insong && autoplay)
-//        //show end screen but ignore score
-//        HOOK_CONTINUE(ExportGameEnded, void (*)(void*, void*, void*, bool), thisRBGameData, Game, RBSong, true);
-//    else if (autoplay)
-//        HOOK_CONTINUE(ExportGameEnded, void (*)(void*, void*, void*, bool), thisRBGameData, Game, RBSong, false);
-//    else
-//        HOOK_CONTINUE(ExportGameEnded, void (*)(void*, void*, void*, bool), thisRBGameData, Game, RBSong, won);
-//    
-//    return;
-//}
-//
-//void(*SetCheating)(void*, bool);
-//
-//HOOK_INIT(SetCheating);
-//
-//void SetCheating_hook(void* thisTrackWatcher, bool cheating) {
-//    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
-//
-//    HOOK_CONTINUE(SetCheating, void (*)(void*, bool), thisTrackWatcher, autoplay);
-//    return;
-//}
-//
-//void(*RBVocalPlayerRestart)(void*, float, void*);
-//void(*SetAutoplay)(void*, bool);
-//
-//HOOK_INIT(RBVocalPlayerRestart);
-//
-//void RBVocalPlayerRestart_hook(void* thisRBVocalPlayer, float time, void* song) {
-//    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
-//
-//    SetAutoplay(thisRBVocalPlayer, autoplay);
-//
-//    HOOK_CONTINUE(RBVocalPlayerRestart, void (*)(void*, float, void*), thisRBVocalPlayer, time, song);
-//    return;
-//}
-
 //TODDO: force the readfile function to look for text format instead of binary
 
 //void(*datareadfile)(long, const char*, bool);
@@ -304,6 +245,43 @@ void TscePadSetLightBar_hook(int handle, OrbisPadColor *inputColor) {
     //final_printf("B: %d\n", inputColor->b);
     scePadSetLightBar(handle, inputColor);
     return;
+}
+
+// dta functions
+
+Symbol(*Symbol_Ctor)(Symbol*, const char*);
+void(*DataInitFuncs)();
+void(*DataRegisterFunc)(Symbol, DataFunc);
+DataNode* (*DataArrayEvaluate)(DataNode*, DataArray*, size_t);
+
+DataNode* DataFileRename(DataNode* ret, DataArray* args) {
+    final_printf("renaming file!\n");
+    DataNode firstArg;
+    DataArrayEvaluate(&firstArg, args, 1);
+    DataNode secondArg;
+    DataArrayEvaluate(&secondArg, args, 2);
+    //if(firstArg.type == kDataSymbol & secondArg.type == kDataSymbol)
+    rename(firstArg.mValue.symbol, secondArg.mValue.symbol);
+    final_printf("from %s\n", firstArg.mValue.symbol);
+    final_printf("to %s\n", secondArg.mValue.symbol);
+    ret->mType = kDataInt;
+    ret->mValue.value = 1;
+    return ret;
+}
+
+HOOK_INIT(DataInitFuncs);
+
+void DataInitFuncs_hook() {
+    // New dta functions go here
+    Symbol funcsym;
+    // Rename/Move file
+    Symbol_Ctor(&funcsym, "file_rename");
+    DataRegisterFunc(funcsym, DataFileRename);
+    Symbol_Ctor(&funcsym, "file_move");
+    DataRegisterFunc(funcsym, DataFileRename);
+
+    //add original dta functions
+    HOOK_CONTINUE(DataInitFuncs, void (*)());
 }
 
 #define ADDR_OFFSET 0x00400000
@@ -344,6 +322,10 @@ int32_t attr_public module_start(size_t argc, const void *args)
     GameRestart = (void*)(procInfo.base_address + 0x00a46710);
     GetTitle = (void*)(procInfo.base_address + 0x00f28d20);
     SetMusicSpeed = (void*)(procInfo.base_address + 0x00a470e0);
+    DataInitFuncs = (void*)(procInfo.base_address + 0x00222350);
+    DataRegisterFunc = (void*)(procInfo.base_address + 0x002221f0);
+    DataArrayEvaluate = (void*)(procInfo.base_address + 0x000c7d30);
+    Symbol_Ctor = (void*)(procInfo.base_address + 0x00256fd0);
     //SetGameOver = (void*)(procInfo.base_address + 0x00a48790);
     //SetCheating = (void*)(procInfo.base_address + 0x0122dfc0);
     //SetAutoplay = (void*)(procInfo.base_address + 0x00a65680);
@@ -360,6 +342,7 @@ int32_t attr_public module_start(size_t argc, const void *args)
     //HOOK(ExportGameEnded);
     HOOK(NewFile);
     HOOK(TscePadSetLightBar);
+    HOOK(DataInitFuncs);
     //HOOK(DataReadFile);
 
     return 0;
@@ -377,6 +360,7 @@ int32_t attr_public module_stop(size_t argc, const void *args)
     //UNHOOK(ExportGameEnded);
     UNHOOK(NewFile);
     UNHOOK(TscePadSetLightBar);
+    UNHOOK(DataInitFuncs);
     //UNHOOK(DataReadFile);
     return 0;
 }
