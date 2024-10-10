@@ -253,17 +253,21 @@ Symbol(*Symbol_Ctor)(Symbol*, const char*);
 void(*DataInitFuncs)();
 void(*DataRegisterFunc)(Symbol, DataFunc);
 DataNode* (*DataArrayEvaluate)(DataNode*, DataArray*, size_t);
+Symbol(*DataNodeForceSym)(DataNode*, DataArray*);
 
 DataNode* DataFileRename(DataNode* ret, DataArray* args) {
     final_printf("renaming file!\n");
-    DataNode firstArg;
-    DataArrayEvaluate(&firstArg, args, 1);
-    DataNode secondArg;
-    DataArrayEvaluate(&secondArg, args, 2);
+    DataNode _firstArg = *(args->mNodes + 1);
+    Symbol firstArgsym = DataNodeForceSym(&_firstArg, args);
+    char* firstArg = firstArgsym.sym;
+    DataNode _secondArg = *(args->mNodes + 2);
+    Symbol secondArgsym = DataNodeForceSym(&_secondArg, args);
+    char* secondArg = secondArgsym.sym;
     //if(firstArg.type == kDataSymbol & secondArg.type == kDataSymbol)
-    rename(firstArg.mValue.symbol, secondArg.mValue.symbol);
-    final_printf("from %s\n", firstArg.mValue.symbol);
-    final_printf("to %s\n", secondArg.mValue.symbol);
+    rename(firstArg, secondArg);
+    final_printf("from %s\n", firstArg);
+    final_printf("to %s\n", secondArg);
+    //final_printf("type: %x\n", firstArg.mType);
     ret->mType = kDataInt;
     ret->mValue.value = 1;
     return ret;
@@ -325,6 +329,7 @@ int32_t attr_public module_start(size_t argc, const void *args)
     DataInitFuncs = (void*)(procInfo.base_address + 0x00222350);
     DataRegisterFunc = (void*)(procInfo.base_address + 0x002221f0);
     DataArrayEvaluate = (void*)(procInfo.base_address + 0x000c7d30);
+    DataNodeForceSym = (void*)(procInfo.base_address + 0x0000e850);
     Symbol_Ctor = (void*)(procInfo.base_address + 0x00256fd0);
     //SetGameOver = (void*)(procInfo.base_address + 0x00a48790);
     //SetCheating = (void*)(procInfo.base_address + 0x0122dfc0);
