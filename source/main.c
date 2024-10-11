@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <sys/stat.h>
 
 #define attr_module_hidden __attribute__((weak)) __attribute__((visibility("hidden")))
 #define attr_public __attribute__((visibility("default")))
@@ -89,13 +90,13 @@ void* (*NewFile)(const char*, FileMode);
 HOOK_INIT(NewFile);
 
 void NewFile_hook(const char* path, FileMode mode) {
-    char rawpath[256];
+    char rawpath[2048];
     strcpy(rawpath, RawfilesFolder);
     /*if (rawpath[strlen(rawpath) - 1] != '/') {
         strcat(rawpath, "/");
     }*/
     strcat(rawpath, path);
-    char gamepath[256];
+    char gamepath[2048];
     strcpy(gamepath, GameRawfilesFolder);
     strcat(gamepath, path);
     const char* newpath = rawpath;
@@ -162,19 +163,19 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
 
     bool speedfile = file_exists("/data/GoldHEN/RB4DX/speedmod.ini");
     float speed = 1.00;
-    char speedtitleint[256];
-    char speedtxt[256];
+    char speedtitleint[512];
+    char speedtxt[512];
     char* speedtitle;
     strcpy(speedtitleint, thisMetadata->mTitle);
 
     bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
-    char aptitleint[256];
+    char aptitleint[512];
     strcpy(aptitleint, thisMetadata->mTitle);
     strcat(aptitleint, autoplaytitle);
     char* aptitle = aptitleint;
 
     bool drunkmode = file_exists("/data/GoldHEN/RB4DX/drunkmode.ini");
-    char dmtitleint[256];
+    char dmtitleint[512];
     strcpy(dmtitleint, thisMetadata->mTitle);
     strcat(dmtitleint, drunkmodetitle);
     char* dmtitle = dmtitleint;
@@ -251,6 +252,85 @@ DataNode* DataFileRename(DataNode* ret, DataArray* args) {
     return ret;
 }
 
+DataNode* DxFileRename(DataNode* ret, DataArray* args) {
+    final_printf("renaming file!\n");
+    // set up first arg
+    char __firstArg[2048];
+    DataNode _firstArg = *(args->mNodes + 1);
+    Symbol firstArgsym = DataNodeForceSym(&_firstArg, args);
+    strcpy(__firstArg, RawfilesFolder);
+    strcat(__firstArg, firstArgsym.sym);
+    char* firstArg = __firstArg;
+
+    // set up second arg
+    char __secondArg[2048];
+    DataNode _secondArg = *(args->mNodes + 2);
+    Symbol secondArgsym = DataNodeForceSym(&_secondArg, args);
+    strcpy(__secondArg, RawfilesFolder);
+    strcat(__secondArg, secondArgsym.sym);
+    char* secondArg = __secondArg;
+
+    rename(firstArg, secondArg);
+    final_printf("from %s\n", firstArg);
+    final_printf("to %s\n", secondArg);
+    //final_printf("type: %x\n", firstArg.mType);
+    ret->mType = kDataInt;
+    ret->mValue.value = 1;
+    return ret;
+}
+
+DataNode* DxFileExists(DataNode* ret, DataArray* args) {
+    char __Arg[2048];
+    DataNode _Arg = *(args->mNodes + 1);
+    Symbol Argsym = DataNodeForceSym(&_Arg, args);
+    strcpy(__Arg, RawfilesFolder);
+    strcat(__Arg, Argsym.sym);
+    char* Arg = __Arg;
+    ret->mType = kDataInt;
+    ret->mValue.value = file_exists(Arg);
+    return ret;
+}
+
+DataNode* DxFileDelete(DataNode* ret, DataArray* args) {
+    char __Arg[2048];
+    DataNode _Arg = *(args->mNodes + 1);
+    Symbol Argsym = DataNodeForceSym(&_Arg, args);
+    strcpy(__Arg, RawfilesFolder);
+    strcat(__Arg, Argsym.sym);
+    char* Arg = __Arg;
+    remove(Arg);
+    ret->mType = kDataInt;
+    ret->mValue.value = 1;
+    return ret;
+}
+
+DataNode* DxFileMkdir(DataNode* ret, DataArray* args) {
+    char __Arg[2048];
+    DataNode _Arg = *(args->mNodes + 1);
+    Symbol Argsym = DataNodeForceSym(&_Arg, args);
+    strcpy(__Arg, RawfilesFolder);
+    strcat(__Arg, Argsym.sym);
+    char* Arg = __Arg;
+    mkdir(Arg, 0777);
+    ret->mType = kDataInt;
+    ret->mValue.value = 1;
+    return ret;
+}
+
+DataNode* DxWriteNullFile(DataNode* ret, DataArray* args) {
+    char __Arg[2048];
+    DataNode _Arg = *(args->mNodes + 1);
+    Symbol Argsym = DataNodeForceSym(&_Arg, args);
+    strcpy(__Arg, RawfilesFolder);
+    strcat(__Arg, Argsym.sym);
+    char* Arg = __Arg;
+    FILE* fptr = fopen(Arg, "w");
+    fclose(fptr);
+    ret->mType = kDataInt;
+    ret->mValue.value = 1;
+    return ret;
+}
+
 HOOK_INIT(DataInitFuncs);
 
 void DataInitFuncs_hook() {
@@ -261,6 +341,21 @@ void DataInitFuncs_hook() {
     DataRegisterFunc(funcsym, DataFileRename);
     Symbol_Ctor(&funcsym, "file_move");
     DataRegisterFunc(funcsym, DataFileRename);
+    // DX: file_rename using "/data/GoldHEN/RB4DX/" as root path
+    Symbol_Ctor(&funcsym, "dx_file_rename");
+    DataRegisterFunc(funcsym, DxFileRename);
+    // DX: file_exists using "/data/GoldHEN/RB4DX/" as root path
+    Symbol_Ctor(&funcsym, "dx_file_exists");
+    DataRegisterFunc(funcsym, DxFileExists);
+    // DX: file_delete using "/data/GoldHEN/RB4DX/" as root path
+    Symbol_Ctor(&funcsym, "dx_file_delete");
+    DataRegisterFunc(funcsym, DxFileDelete);
+    // DX: file_mkdir using "/data/GoldHEN/RB4DX/" as root path
+    Symbol_Ctor(&funcsym, "dx_file_mkdir");
+    DataRegisterFunc(funcsym, DxFileMkdir);
+    // DX: write_file using "/data/GoldHEN/RB4DX/" as root path (always creates blank file)
+    Symbol_Ctor(&funcsym, "dx_write_null_file");
+    DataRegisterFunc(funcsym, DxWriteNullFile);
 
     //add original dta functions
     HOOK_CONTINUE(DataInitFuncs, void (*)());
