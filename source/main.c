@@ -67,11 +67,11 @@ void DoNotification(const char *FMT, ...) {
 }
 
 static struct proc_info procInfo;
+bool USTitleID = true;
 
 // ARKless file loading hook
 const char* RawfilesFolder = "/data/GoldHEN/RB4DX/";
 const char* GameRawfilesFolder = "data:/GoldHEN/RB4DX/";
-bool USTitleID = true;
 bool PrintRawfiles = false;
 bool PrintArkfiles = false;
 
@@ -210,28 +210,6 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
         return thisMetadata->mTitle;
 }
 
-//TODDO: force the readfile function to look for text format instead of binary
-
-//void(*datareadfile)(long, const char*, bool);
-//
-//hook_init(datareadfile);
-//
-//void datareadfile_hook(long l, const char* filename, bool b){
-//    final_printf("attempting to read dta %s\n", filename);
-//    if (strcmp(filename, "dx/ui/dx_init.dta") == 0) {
-//        final_printf("dx.dta read detected!\n");
-//        final_printf("long = %ld\n", l);
-//        final_printf("bool = %d\n", b);
-//        hook_continue(datareadfile, void(*)(long, const char*, bool), l, filename, 0);
-//        //if (b == 1)
-//        //    hook_continue(datareadfile, void(*)(const char*, bool), filename, 0);
-//        //else
-//        //    hook_continue(datareadfile, void(*)(const char*, bool), filename, 1);
-//    } else
-//        hook_continue(datareadfile, void(*)(long, const char*, bool), l, filename, b);
-//    return;
-//}
-
 //read lightbar status
 
 int(*TscePadSetLightBar)(int handle, OrbisPadColor *inputColor);
@@ -319,9 +297,6 @@ int32_t attr_public module_start(size_t argc, const void *args)
     final_printf("Applying RB4DX hooks...\n");
     DoNotificationStatic("RB4DX Plugin loaded!");
 
-    //configuration GameConfig; //TODO: implement game configuration
-
-    //DataReadFile = (void*)(procInfo.base_address + 0x002205e0);
     NewFile = (void*)(procInfo.base_address + 0x00376d40);
     GameRestart = (void*)(procInfo.base_address + 0x00a46710);
     GetTitle = (void*)(procInfo.base_address + 0x00f28d20);
@@ -331,24 +306,14 @@ int32_t attr_public module_start(size_t argc, const void *args)
     DataArrayEvaluate = (void*)(procInfo.base_address + 0x000c7d30);
     DataNodeForceSym = (void*)(procInfo.base_address + 0x0000e850);
     Symbol_Ctor = (void*)(procInfo.base_address + 0x00256fd0);
-    //SetGameOver = (void*)(procInfo.base_address + 0x00a48790);
-    //SetCheating = (void*)(procInfo.base_address + 0x0122dfc0);
-    //SetAutoplay = (void*)(procInfo.base_address + 0x00a65680);
-    //RBVocalPlayerRestart = (void*)(procInfo.base_address + 0x00a622f0);
-    //ExportGameEnded = (void*)(procInfo.base_address + 0x009648d0);
     TscePadSetLightBar = (void*)(procInfo.base_address + 0x012450d0);
 
     // apply all hooks
     HOOK(GameRestart);
-    //HOOK(SetGameOver);
-    //HOOK(SetCheating);
     HOOK(GetTitle);
-    //HOOK(RBVocalPlayerRestart);
-    //HOOK(ExportGameEnded);
     HOOK(NewFile);
     HOOK(TscePadSetLightBar);
     HOOK(DataInitFuncs);
-    //HOOK(DataReadFile);
 
     return 0;
 }
@@ -358,14 +323,9 @@ int32_t attr_public module_stop(size_t argc, const void *args)
     final_printf("Stopping plugin...\n");
     // unhook everything just in case
     UNHOOK(GameRestart);
-    //UNHOOK(SetGameOver);
-    //UNHOOK(SetCheating);
     UNHOOK(GetTitle);
-    //UNHOOK(RBVocalPlayerRestart);
-    //UNHOOK(ExportGameEnded);
     UNHOOK(NewFile);
     UNHOOK(TscePadSetLightBar);
     UNHOOK(DataInitFuncs);
-    //UNHOOK(DataReadFile);
     return 0;
 }
