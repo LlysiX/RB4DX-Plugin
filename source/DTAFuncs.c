@@ -152,6 +152,20 @@ DataNode* DxFileCopy(DataNode* ret, DataArray* args) {
     Symbol firstArgsym = DataNodeForceSym(&_firstArg, args);
     strcpy(__firstArg, DXFolder);
     strcat(__firstArg, firstArgsym.sym);
+    for (int i = 0, j; __firstArg[i] != '\0'; ++i) { // fix sprinted files with spaces (TODO: repeat this in the other funcs)
+
+        // enter the loop if the character is '
+        // and not the null character
+        while ((__firstArg[i] == '\'') && !(__firstArg[i] == '\0')) {
+            for (j = i; __firstArg[j] != '\0'; ++j) {
+
+                // if jth element of __firstArg is ',
+                // assign the value of (j+1)th element to the jth element
+                __firstArg[j] = __firstArg[j + 1];
+            }
+            __firstArg[j] = '\0';
+        }
+    }
     char* firstArg = __firstArg;
 
     // set up second arg
@@ -173,6 +187,9 @@ DataNode* DxFileCopy(DataNode* ret, DataArray* args) {
         fclose(optr);
         final_printf("from %s\n", firstArg);
         final_printf("to %s\n", secondArg);
+    }
+    else {
+        final_printf("error finding %s\n", firstArg);
     }
     ret->mType = kDataInt;
     ret->mValue.value = 1;
