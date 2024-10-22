@@ -1,0 +1,2 @@
+void InitDTAHooks();
+void DestroyDTAHooks();

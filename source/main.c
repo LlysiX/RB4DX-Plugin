@@ -8,33 +8,25 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <sys/stat.h>
 
 #define attr_module_hidden __attribute__((weak)) __attribute__((visibility("hidden")))
 #define attr_public __attribute__((visibility("default")))
 
 #define GOLDHEN_PATH "/data/GoldHEN"
 #define RB4DX_PATH GOLDHEN_PATH "/RB4DX"
-#define PLUGIN_CONFIG_PATH RB4DX_PATH "/RB4DX.ini"
-#define PLUGIN_NAME "RB4DX"
-#define final_printf(a, args...) klog("[" PLUGIN_NAME "] " a, ##args)
 
 #include <GoldHEN/Common.h>
 #include <orbis/libkernel.h>
 #include <orbis/Sysmodule.h>
 #include <orbis/Pad.h>
+#include "plugin_common.h"
+#include "DTAFuncs.h"
 #include "rb4/songmetadata.h"
-#include "rb4/data.h"
 
 attr_public const char *g_pluginName = PLUGIN_NAME;
 attr_public const char *g_pluginDesc = "Plugin for loading Rock Band 4 Deluxe files, among other enhancements.";
 attr_public const char *g_pluginAuth = "LysiX";
 attr_public uint32_t g_pluginVersion = 0x00000100; // 1.00
-
-bool file_exists(const char* filename) {
-    struct stat buff;
-    return stat(filename, &buff) == 0 ? true : false;
-}
 
 void DoNotificationStatic(const char* text) {
     bool NotifyColored = file_exists("/data/GoldHEN/RB4DX/notifycolored.ini");
@@ -67,7 +59,6 @@ void DoNotification(const char *FMT, ...) {
     sceKernelSendNotificationRequest(0, &Buffer, sizeof(Buffer), 0);
 }
 
-static struct proc_info procInfo;
 bool USTitleID = true;
 
 // ARKless file loading hook
@@ -226,141 +217,6 @@ void TscePadSetLightBar_hook(int handle, OrbisPadColor *inputColor) {
     return;
 }
 
-// dta functions
-
-Symbol(*Symbol_Ctor)(Symbol*, const char*);
-void(*DataInitFuncs)();
-void(*DataRegisterFunc)(Symbol, DataFunc);
-DataNode* (*DataArrayEvaluate)(DataNode*, DataArray*, size_t);
-Symbol(*DataNodeForceSym)(DataNode*, DataArray*);
-
-DataNode* DataFileRename(DataNode* ret, DataArray* args) {
-    final_printf("renaming file!\n");
-    DataNode _firstArg = *(args->mNodes + 1);
-    Symbol firstArgsym = DataNodeForceSym(&_firstArg, args);
-    char* firstArg = firstArgsym.sym;
-    DataNode _secondArg = *(args->mNodes + 2);
-    Symbol secondArgsym = DataNodeForceSym(&_secondArg, args);
-    char* secondArg = secondArgsym.sym;
-    //if(firstArg.type == kDataSymbol & secondArg.type == kDataSymbol)
-    rename(firstArg, secondArg);
-    final_printf("from %s\n", firstArg);
-    final_printf("to %s\n", secondArg);
-    //final_printf("type: %x\n", firstArg.mType);
-    ret->mType = kDataInt;
-    ret->mValue.value = 1;
-    return ret;
-}
-
-DataNode* DxFileRename(DataNode* ret, DataArray* args) {
-    final_printf("renaming file!\n");
-    // set up first arg
-    char __firstArg[2048];
-    DataNode _firstArg = *(args->mNodes + 1);
-    Symbol firstArgsym = DataNodeForceSym(&_firstArg, args);
-    strcpy(__firstArg, RawfilesFolder);
-    strcat(__firstArg, firstArgsym.sym);
-    char* firstArg = __firstArg;
-
-    // set up second arg
-    char __secondArg[2048];
-    DataNode _secondArg = *(args->mNodes + 2);
-    Symbol secondArgsym = DataNodeForceSym(&_secondArg, args);
-    strcpy(__secondArg, RawfilesFolder);
-    strcat(__secondArg, secondArgsym.sym);
-    char* secondArg = __secondArg;
-
-    rename(firstArg, secondArg);
-    final_printf("from %s\n", firstArg);
-    final_printf("to %s\n", secondArg);
-    //final_printf("type: %x\n", firstArg.mType);
-    ret->mType = kDataInt;
-    ret->mValue.value = 1;
-    return ret;
-}
-
-DataNode* DxFileExists(DataNode* ret, DataArray* args) {
-    char __Arg[2048];
-    DataNode _Arg = *(args->mNodes + 1);
-    Symbol Argsym = DataNodeForceSym(&_Arg, args);
-    strcpy(__Arg, RawfilesFolder);
-    strcat(__Arg, Argsym.sym);
-    char* Arg = __Arg;
-    ret->mType = kDataInt;
-    ret->mValue.value = file_exists(Arg);
-    return ret;
-}
-
-DataNode* DxFileDelete(DataNode* ret, DataArray* args) {
-    char __Arg[2048];
-    DataNode _Arg = *(args->mNodes + 1);
-    Symbol Argsym = DataNodeForceSym(&_Arg, args);
-    strcpy(__Arg, RawfilesFolder);
-    strcat(__Arg, Argsym.sym);
-    char* Arg = __Arg;
-    remove(Arg);
-    ret->mType = kDataInt;
-    ret->mValue.value = 1;
-    return ret;
-}
-
-DataNode* DxFileMkdir(DataNode* ret, DataArray* args) {
-    char __Arg[2048];
-    DataNode _Arg = *(args->mNodes + 1);
-    Symbol Argsym = DataNodeForceSym(&_Arg, args);
-    strcpy(__Arg, RawfilesFolder);
-    strcat(__Arg, Argsym.sym);
-    char* Arg = __Arg;
-    mkdir(Arg, 0777);
-    ret->mType = kDataInt;
-    ret->mValue.value = 1;
-    return ret;
-}
-
-DataNode* DxWriteNullFile(DataNode* ret, DataArray* args) {
-    char __Arg[2048];
-    DataNode _Arg = *(args->mNodes + 1);
-    Symbol Argsym = DataNodeForceSym(&_Arg, args);
-    strcpy(__Arg, RawfilesFolder);
-    strcat(__Arg, Argsym.sym);
-    char* Arg = __Arg;
-    FILE* fptr = fopen(Arg, "w");
-    fclose(fptr);
-    ret->mType = kDataInt;
-    ret->mValue.value = 1;
-    return ret;
-}
-
-HOOK_INIT(DataInitFuncs);
-
-void DataInitFuncs_hook() {
-    // New dta functions go here
-    Symbol funcsym;
-    // Rename/Move file
-    Symbol_Ctor(&funcsym, "file_rename");
-    DataRegisterFunc(funcsym, DataFileRename);
-    Symbol_Ctor(&funcsym, "file_move");
-    DataRegisterFunc(funcsym, DataFileRename);
-    // DX: file_rename using "/data/GoldHEN/RB4DX/" as root path
-    Symbol_Ctor(&funcsym, "dx_file_rename");
-    DataRegisterFunc(funcsym, DxFileRename);
-    // DX: file_exists using "/data/GoldHEN/RB4DX/" as root path
-    Symbol_Ctor(&funcsym, "dx_file_exists");
-    DataRegisterFunc(funcsym, DxFileExists);
-    // DX: file_delete using "/data/GoldHEN/RB4DX/" as root path
-    Symbol_Ctor(&funcsym, "dx_file_delete");
-    DataRegisterFunc(funcsym, DxFileDelete);
-    // DX: file_mkdir using "/data/GoldHEN/RB4DX/" as root path
-    Symbol_Ctor(&funcsym, "dx_file_mkdir");
-    DataRegisterFunc(funcsym, DxFileMkdir);
-    // DX: write_file using "/data/GoldHEN/RB4DX/" as root path (always creates blank file)
-    Symbol_Ctor(&funcsym, "dx_write_null_file");
-    DataRegisterFunc(funcsym, DxWriteNullFile);
-
-    //add original dta functions
-    HOOK_CONTINUE(DataInitFuncs, void (*)());
-}
-
 #define ADDR_OFFSET 0x00400000
 int32_t attr_public module_start(size_t argc, const void *args)
 {
@@ -396,19 +252,14 @@ int32_t attr_public module_start(size_t argc, const void *args)
     GameRestart = (void*)(procInfo.base_address + 0x00a46710);
     GetTitle = (void*)(procInfo.base_address + 0x00f28d20);
     SetMusicSpeed = (void*)(procInfo.base_address + 0x00a470e0);
-    DataInitFuncs = (void*)(procInfo.base_address + 0x00222350);
-    DataRegisterFunc = (void*)(procInfo.base_address + 0x002221f0);
-    DataArrayEvaluate = (void*)(procInfo.base_address + 0x000c7d30);
-    DataNodeForceSym = (void*)(procInfo.base_address + 0x0000e850);
-    Symbol_Ctor = (void*)(procInfo.base_address + 0x00256fd0);
     TscePadSetLightBar = (void*)(procInfo.base_address + 0x012450d0);
 
     // apply all hooks
+    InitDTAHooks();
     HOOK(GameRestart);
     HOOK(GetTitle);
     HOOK(NewFile);
     HOOK(TscePadSetLightBar);
-    HOOK(DataInitFuncs);
 
     return 0;
 }
@@ -417,10 +268,10 @@ int32_t attr_public module_stop(size_t argc, const void *args)
 {
     final_printf("Stopping plugin...\n");
     // unhook everything just in case
+    DestroyDTAHooks();
     UNHOOK(GameRestart);
     UNHOOK(GetTitle);
     UNHOOK(NewFile);
     UNHOOK(TscePadSetLightBar);
-    UNHOOK(DataInitFuncs);
     return 0;
 }
