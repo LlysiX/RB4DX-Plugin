@@ -226,7 +226,6 @@ HOOK_INIT(UpdateColors);
 
 bool UpdateColors_hook(RBGemSmasherCom* thiscom) {
 
-    colorptr = &(thiscom->mColor);
     bool r = HOOK_CONTINUE(UpdateColors, bool(*)(RBGemSmasherCom*), thiscom);
 
     //final_printf("Smasher color detected!\n");
@@ -308,6 +307,7 @@ bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* col
     newcoloro.a = 1.0;
     char coltest[9];
     sprintf(coltest, "%f", toset->r);
+    //green
     if (strcmp(coltest, "0.130136") == 0) return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcolorg, param_6);
     if (strcmp(coltest, "0.242281") == 0) return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcolorg, param_6);
     //red
