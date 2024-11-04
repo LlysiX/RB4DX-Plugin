@@ -117,13 +117,7 @@ void GameRestart_hook(void* thisGame, bool restart) {
     bool speedfile = file_exists("/data/GoldHEN/RB4DX/speedmod.ini");
 
     if (speedfile) {
-        FILE* spdfptr;
-        spdfptr = fopen("/data/GoldHEN/RB4DX/speedmod.ini", "r");
-        char spdstring[100];
-        fgets(spdstring, 100, spdfptr);
-        const char* spdstringptr = spdstring;
-        speed = atof(spdstringptr);
-        fclose(spdfptr);
+        speed = read_file_as_float("/data/GoldHEN/RB4DX/speedmod.ini");
     }
 
 
@@ -174,13 +168,7 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
 
 
     if (speedfile) {
-        FILE* spdfptr;
-        spdfptr = fopen("/data/GoldHEN/RB4DX/speedmod.ini", "r");
-        char spdstring[100];
-        fgets(spdstring, 100, spdfptr);
-        const char* spdstringptr = spdstring;
-        speed = atof(spdstringptr) * 100;
-        fclose(spdfptr);
+        speed = read_file_as_float("/data/GoldHEN/RB4DX/speedmod.ini") * 100;
     }
 
     //final_printf("songtitle: %s\n", thisMetadata->mTitle);
@@ -219,6 +207,7 @@ void TscePadSetLightBar_hook(int handle, OrbisPadColor *inputColor) {
 }
 
 // Custom gem colors from RBVREnhanced, updated to set gems individually instead of all at once
+// TODO: FIND SUSTAIN COLOR
 
 bool(*UpdateColors)(RBGemSmasherCom* thiscom);
 
@@ -226,7 +215,10 @@ HOOK_INIT(UpdateColors);
 
 bool UpdateColors_hook(RBGemSmasherCom* thiscom) {
 
+    bool enabled = file_exists("/data/GoldHEN/RB4DX/settings/theme/gem/colors/enabled.dta");
     bool r = HOOK_CONTINUE(UpdateColors, bool(*)(RBGemSmasherCom*), thiscom);
+    if (!enabled)
+        return r;
 
     //final_printf("Smasher color detected!\n");
     //final_printf("R: %f\n", thiscom->mColor.r);
@@ -238,37 +230,37 @@ bool UpdateColors_hook(RBGemSmasherCom* thiscom) {
 
     //green
     if (strcmp(coltest, "0.130136") == 0) {
-        thiscom->mColor.r = 1.0;
-        thiscom->mColor.g = 0.1;
-        thiscom->mColor.b = 1.0;
+        thiscom->mColor.r = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/greenr.dta");
+        thiscom->mColor.g = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/greeng.dta");
+        thiscom->mColor.b = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/greenb.dta");
         thiscom->mColor.a = 1.0;
     }
     //red
     if (strcmp(coltest, "0.896269") == 0) {
-        thiscom->mColor.r = 1.0;
-        thiscom->mColor.g = 0.5;
-        thiscom->mColor.b = 0.0;
+        thiscom->mColor.r = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/redr.dta");
+        thiscom->mColor.g = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/redg.dta");
+        thiscom->mColor.b = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/redb.dta");
         thiscom->mColor.a = 1.0;
     }
     //yellow
     if (strcmp(coltest, "0.791298") == 0) {
-        thiscom->mColor.r = 0.01;
-        thiscom->mColor.g = 0.01;
-        thiscom->mColor.b = 0.01;
+        thiscom->mColor.r = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/yellowr.dta");
+        thiscom->mColor.g = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/yellowg.dta");
+        thiscom->mColor.b = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/yellowb.dta");
         thiscom->mColor.a = 1.0;
     }
     //blue
     if (strcmp(coltest, "0.011612") == 0) {
-        thiscom->mColor.r = 1.0;
-        thiscom->mColor.g = 0.5;
-        thiscom->mColor.b = 0.0;
+        thiscom->mColor.r = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/bluer.dta");
+        thiscom->mColor.g = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/blueg.dta");
+        thiscom->mColor.b = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/blueb.dta");
         thiscom->mColor.a = 1.0;
     }
     //orange
     if (strcmp(coltest, "0.745404") == 0) {
-        thiscom->mColor.r = 1.0;
-        thiscom->mColor.g = 0.1;
-        thiscom->mColor.b = 1.0;
+        thiscom->mColor.r = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/oranger.dta");
+        thiscom->mColor.g = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/orangeg.dta");
+        thiscom->mColor.b = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/orangeb.dta");
         thiscom->mColor.a = 1.0;
     }
 
@@ -280,46 +272,67 @@ bool (*DoSetColor)(void* component, void* proppath, void* propinfo, Color* color
 HOOK_INIT(DoSetColor);
 
 bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* color, Color* toset, bool param_6) {
+    bool insong = file_exists("/data/GoldHEN/RB4DX/insong.dta");
+    bool enabled = file_exists("/data/GoldHEN/RB4DX/settings/theme/gem/colors/enabled.dta");
+    if (!enabled || !insong)
+        return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, toset, param_6);
+    
+    //final_printf("Color detected\n");
+    //final_printf("R: %f\n", toset->r);
+    //final_printf("G: %f\n", toset->g);
+    //final_printf("B: %f\n", toset->b);
+
     Color newcolorg;
-    newcolorg.r = 1.0;
-    newcolorg.g = 0.1;
-    newcolorg.b = 1.0;
-    newcolorg.a = 1.0;
     Color newcolorr;
-    newcolorr.r = 1.0;
-    newcolorr.g = 0.5;
-    newcolorr.b = 0.0;
-    newcolorr.a = 1.0;
     Color newcolory;
-    newcolory.r = 0.01;
-    newcolory.g = 0.01;
-    newcolory.b = 0.01;
-    newcolory.a = 1.0;
     Color newcolorb;
-    newcolorb.r = 1.0;
-    newcolorb.g = 0.5;
-    newcolorb.b = 0.0;
-    newcolorb.a = 1.0;
     Color newcoloro;
-    newcoloro.r = 1.0;
-    newcoloro.g = 0.1;
-    newcoloro.b = 1.0;
-    newcoloro.a = 1.0;
+
     char coltest[9];
     sprintf(coltest, "%f", toset->r);
+    //none
+    if ((strcmp(coltest, "0.130136") != 0) && (strcmp(coltest, "0.242281") != 0) && (strcmp(coltest, "0.896269") != 0) && (strcmp(coltest, "0.791298") != 0) && (strcmp(coltest, "0.011612") != 0) && (strcmp(coltest, "0.004025") != 0) && (strcmp(coltest, "0.745404") != 0) && (strcmp(coltest, "0.814847") != 0))
+        return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, toset, param_6);
     //green
-    if (strcmp(coltest, "0.130136") == 0) return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcolorg, param_6);
-    if (strcmp(coltest, "0.242281") == 0) return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcolorg, param_6);
+    if ((strcmp(coltest, "0.130136") == 0) || (strcmp(coltest, "0.242281") == 0)) {
+        newcolorg.r = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/greenr.dta");
+        newcolorg.g = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/greeng.dta");
+        newcolorg.b = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/greenb.dta");
+        newcolorg.a = 1.0;
+        return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcolorg, param_6);
+    }
     //red
-    if (strcmp(coltest, "0.896269") == 0) return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcolorr, param_6);
+    if (strcmp(coltest, "0.896269") == 0) {
+        newcolorr.r = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/redr.dta");
+        newcolorr.g = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/redg.dta");
+        newcolorr.b = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/redb.dta");
+        newcolorr.a = 1.0;
+        return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcolorr, param_6);
+    }
     //yellow
-    if (strcmp(coltest, "0.791298") == 0) return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcolory, param_6);
+    if (strcmp(coltest, "0.791298") == 0) {
+        newcolory.r = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/yellowr.dta");
+        newcolory.g = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/yellowg.dta");
+        newcolory.b = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/yellowb.dta");
+        newcolory.a = 1.0;
+        return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcolory, param_6);
+    }
     //blue
-    if (strcmp(coltest, "0.011612") == 0) return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcolorb, param_6);
-    if (strcmp(coltest, "0.004025") == 0) return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcolorb, param_6);
+    if ((strcmp(coltest, "0.011612") == 0) || (strcmp(coltest, "0.004025") == 0)) {
+        newcolorb.r = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/bluer.dta");
+        newcolorb.g = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/blueg.dta");
+        newcolorb.b = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/blueb.dta");
+        newcolorb.a = 1.0;
+        return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcolorb, param_6);
+    }
     //orange
-    if (strcmp(coltest, "0.745404") == 0) return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcoloro, param_6);
-    if (strcmp(coltest, "0.814847") == 0) return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcoloro, param_6);
+    if ((strcmp(coltest, "0.745404") == 0) || (strcmp(coltest, "0.814847") == 0)) {
+        newcoloro.r = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/oranger.dta");
+        newcoloro.g = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/orangeg.dta");
+        newcoloro.b = read_file_as_float("/data/GoldHEN/RB4DX/settings/theme/gem/colors/orangeb.dta");
+        newcoloro.a = 1.0;
+        return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcoloro, param_6);
+    }
     return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, toset, param_6);
 }
 
