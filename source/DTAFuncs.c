@@ -21,6 +21,8 @@ void(*DataInitFuncs)();
 void(*DataRegisterFunc)(Symbol, DataFunc);
 DataNode* (*DataArrayEvaluate)(DataNode*, DataArray*, size_t);
 Symbol(*DataNodeForceSym)(DataNode*, DataArray*);
+float (*DataNodeFloat)(DataNode*, DataArray*);
+SystemOptions* options;
 
 DataNode* DataFileRename(DataNode* ret, DataArray* args) {
     final_printf("renaming file!\n");
@@ -196,6 +198,44 @@ DataNode* DxFileCopy(DataNode* ret, DataArray* args) {
     return ret;
 }
 
+// get calibration offset in dta in ms
+
+DataNode* GetAudioCalibration(DataNode* ret, DataArray* args) {
+    ret->mType = kDataInt;
+    ret->mValue.value = options->mAudioOffset;
+    return ret;
+}
+
+DataNode* GetVideoCalibration(DataNode* ret, DataArray* args) {
+    ret->mType = kDataInt;
+    ret->mValue.value = options->mVideoOffset;
+    return ret;
+}
+
+// set calibration offset in dta in ms 
+
+DataNode* SetAudioCalibration(DataNode* ret, DataArray* args) {
+    DataNode _Arg = *(args->mNodes + 1);
+    float Argfloat = DataNodeFloat(&_Arg, args);
+    if (options != NULL) {
+        options->mAudioOffset = Argfloat;
+    }
+    ret->mType = kDataInt;
+    ret->mValue.value = 1;
+    return ret;
+}
+
+DataNode* SetVideoCalibration(DataNode* ret, DataArray* args) {
+    DataNode _Arg = *(args->mNodes + 1);
+    float Argfloat = DataNodeFloat(&_Arg, args);
+    if (options != NULL) {
+        options->mVideoOffset = Argfloat;
+    }
+    ret->mType = kDataInt;
+    ret->mValue.value = 1;
+    return ret;
+}
+
 HOOK_INIT(DataInitFuncs);
 
 void DataInitFuncs_hook() {
@@ -228,8 +268,63 @@ void DataInitFuncs_hook() {
     Symbol_Ctor(&funcsym, "dx_write_null_file");
     DataRegisterFunc(funcsym, DxWriteNullFile);
 
+    // get calibration offset in dta in ms
+    Symbol_Ctor(&funcsym, "get_audio_calibration");
+    DataRegisterFunc(funcsym, GetAudioCalibration);
+
+    Symbol_Ctor(&funcsym, "get_video_calibration");
+    DataRegisterFunc(funcsym, GetVideoCalibration);
+
+
+
+    // set calibration offset in dta in ms 
+    Symbol_Ctor(&funcsym, "set_audio_calibration");
+    DataRegisterFunc(funcsym, SetAudioCalibration);
+
+    Symbol_Ctor(&funcsym, "set_video_calibration");
+    DataRegisterFunc(funcsym, SetVideoCalibration);
+
     //add original dta functions
     HOOK_CONTINUE(DataInitFuncs, void (*)());
+}
+
+void (*SystemOptionsLoad)(SystemOptions*, void*);
+
+HOOK_INIT(SystemOptionsLoad);
+
+void SystemOptionsLoad_hook(SystemOptions* thisoptions, void* binstream) {
+    //DoNotificationStatica("systemoptions::load");
+    options = thisoptions;
+    HOOK_CONTINUE(SystemOptionsLoad, void (*)(SystemOptions*, void*), thisoptions, binstream);
+    //force override calibration if not saved in the save file
+    if (file_exists("/data/GoldHEN/RB4DX/videocalib.ini")) {
+        options->mVideoOffset = read_file_as_float("/data/GoldHEN/RB4DX/videocalib.ini");
+    }
+    if (file_exists("/data/GoldHEN/RB4DX/audiocalib.ini")) {
+        options->mAudioOffset = read_file_as_float("/data/GoldHEN/RB4DX/audiocalib.ini");
+    }
+    //DoNotificationa("Audio Offset Set: %.0f", thisoptions->mAudioOffset); // 260
+    //DoNotificationa("Video Offset Set: %.0f", thisoptions->mVideoOffset); // 260
+    return;
+}
+
+void (*SystemOptionsSave)(SystemOptions*, void*);
+
+HOOK_INIT(SystemOptionsSave);
+
+void SystemOptionsSave_hook(SystemOptions* thisoptions, void* binstream) {
+    //DoNotificationStatica("systemoptions::save");
+    options = thisoptions;
+    HOOK_CONTINUE(SystemOptionsSave, void (*)(SystemOptions*, void*), thisoptions, binstream);
+    //DoNotificationa("Audio Offset Set: %.0f", thisoptions->mAudioOffset);
+    // delete force override files when this is called
+    if (file_exists("/data/GoldHEN/RB4DX/videocalib.ini")) {
+        remove("/data/GoldHEN/RB4DX/videocalib.ini");
+    }
+    if (file_exists("/data/GoldHEN/RB4DX/audiocalib.ini")) {
+        remove("/data/GoldHEN/RB4DX/audiocalib.ini");
+    }
+    return;
 }
 
 void InitDTAHooks() {
@@ -239,11 +334,18 @@ void InitDTAHooks() {
     DataRegisterFunc = (void*)(procInfo.base_address + 0x002221f0);
     DataArrayEvaluate = (void*)(procInfo.base_address + 0x000c7d30);
     DataNodeForceSym = (void*)(procInfo.base_address + 0x0000e850);
+    DataNodeFloat = (void*)(procInfo.base_address + 0x0000ee30);
     Symbol_Ctor = (void*)(procInfo.base_address + 0x00256fd0);
+    SystemOptionsLoad = (void*)(procInfo.base_address + 0x011b2310);
+    SystemOptionsSave = (void*)(procInfo.base_address + 0x011b2220);
 
     HOOK(DataInitFuncs);
+    HOOK(SystemOptionsLoad);
+    HOOK(SystemOptionsSave);
 }
 
 void DestroyDTAHooks() {
     UNHOOK(DataInitFuncs);
+    UNHOOK(SystemOptionsLoad);
+    UNHOOK(SystemOptionsSave);
 }
