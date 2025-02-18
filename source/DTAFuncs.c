@@ -308,14 +308,14 @@ void SystemOptionsLoad_hook(SystemOptions* thisoptions, void* binstream) {
     return;
 }
 
-void (*SystemOptionsSave)(SystemOptions*, void*);
+void (*RBSystemOptionsSave)(void*, void*);
 
-HOOK_INIT(SystemOptionsSave);
+HOOK_INIT(RBSystemOptionsSave);
 
-void SystemOptionsSave_hook(SystemOptions* thisoptions, void* binstream) {
+void RBSystemOptionsSave_hook(void* thisoptions, void* binstream) {
     //DoNotificationStatica("systemoptions::save");
-    options = thisoptions;
-    HOOK_CONTINUE(SystemOptionsSave, void (*)(SystemOptions*, void*), thisoptions, binstream);
+    //options = thisoptions;
+    HOOK_CONTINUE(RBSystemOptionsSave, void (*)(void*, void*), thisoptions, binstream);
     //DoNotificationa("Audio Offset Set: %.0f", thisoptions->mAudioOffset);
     // delete force override files when this is called
     if (file_exists("/data/GoldHEN/RB4DX/videocalib.ini")) {
@@ -337,15 +337,15 @@ void InitDTAHooks() {
     DataNodeFloat = (void*)(procInfo.base_address + 0x0000ee30);
     Symbol_Ctor = (void*)(procInfo.base_address + 0x00256fd0);
     SystemOptionsLoad = (void*)(procInfo.base_address + 0x011b2310);
-    SystemOptionsSave = (void*)(procInfo.base_address + 0x011b2220);
+    RBSystemOptionsSave = (void*)(procInfo.base_address + 0x00d667c0);
 
     HOOK(DataInitFuncs);
     HOOK(SystemOptionsLoad);
-    HOOK(SystemOptionsSave);
+    HOOK(RBSystemOptionsSave);
 }
 
 void DestroyDTAHooks() {
     UNHOOK(DataInitFuncs);
     UNHOOK(SystemOptionsLoad);
-    UNHOOK(SystemOptionsSave);
+    UNHOOK(RBSystemOptionsSave);
 }
