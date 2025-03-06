@@ -21,6 +21,7 @@
 #include <orbis/Pad.h>
 #include "plugin_common.h"
 #include "DTAFuncs.h"
+#include "Autoplay.h"
 #include "rb4/songmetadata.h"
 #include "rb4/gemsmasher.h"
 
@@ -377,6 +378,7 @@ int32_t attr_public module_start(size_t argc, const void *args)
 
     // apply all hooks
     InitDTAHooks();
+    InitAutoplayHooks();
     HOOK(GameRestart);
     HOOK(GetTitle);
     HOOK(NewFile);
@@ -392,9 +394,12 @@ int32_t attr_public module_stop(size_t argc, const void *args)
     final_printf("Stopping plugin...\n");
     // unhook everything just in case
     DestroyDTAHooks();
+    DestroyAutoplayHooks();
     UNHOOK(GameRestart);
     UNHOOK(GetTitle);
     UNHOOK(NewFile);
     UNHOOK(TscePadSetLightBar);
+    UNHOOK(UpdateColors);
+    UNHOOK(DoSetColor);
     return 0;
 }
