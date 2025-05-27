@@ -59,12 +59,12 @@ void RBVocalPlayerRestart_hook(void* thisRBVocalPlayer, float time, void* song) 
 
 void InitAutoplayHooks()
 {
-    sys_sdk_proc_info(&procInfo);
+    uint64_t base_address = get_base_address();
 
-    SetGameOver = (void*)(procInfo.base_address + 0x00a48790);
-    SetCheating = (void*)(procInfo.base_address + 0x0122dfc0);
-    SetAutoplay = (void*)(procInfo.base_address + 0x00a65680);
-    RBVocalPlayerRestart = (void*)(procInfo.base_address + 0x00a622f0);
+    SetGameOver = (void*)(base_address + 0x00a48790);
+    SetCheating = (void*)(base_address + 0x0122dfc0);
+    SetAutoplay = (void*)(base_address + 0x00a65680);
+    RBVocalPlayerRestart = (void*)(base_address + 0x00a622f0);
 
     HOOK(SetGameOver);
     HOOK(SetCheating);

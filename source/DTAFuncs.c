@@ -328,16 +328,16 @@ void RBSystemOptionsSave_hook(void* thisoptions, void* binstream) {
 }
 
 void InitDTAHooks() {
-    sys_sdk_proc_info(&procInfo);
+    uint64_t base_address = get_base_address();
 
-    DataInitFuncs = (void*)(procInfo.base_address + 0x00222350);
-    DataRegisterFunc = (void*)(procInfo.base_address + 0x002221f0);
-    DataArrayEvaluate = (void*)(procInfo.base_address + 0x000c7d30);
-    DataNodeForceSym = (void*)(procInfo.base_address + 0x0000e850);
-    DataNodeFloat = (void*)(procInfo.base_address + 0x0000ee30);
-    Symbol_Ctor = (void*)(procInfo.base_address + 0x00256fd0);
-    SystemOptionsLoad = (void*)(procInfo.base_address + 0x011b2310);
-    RBSystemOptionsSave = (void*)(procInfo.base_address + 0x00d667c0);
+    DataInitFuncs = (void*)(base_address + 0x00222350);
+    DataRegisterFunc = (void*)(base_address + 0x002221f0);
+    DataArrayEvaluate = (void*)(base_address + 0x000c7d30);
+    DataNodeForceSym = (void*)(base_address + 0x0000e850);
+    DataNodeFloat = (void*)(base_address + 0x0000ee30);
+    Symbol_Ctor = (void*)(base_address + 0x00256fd0);
+    SystemOptionsLoad = (void*)(base_address + 0x011b2310);
+    RBSystemOptionsSave = (void*)(base_address + 0x00d667c0);
 
     HOOK(DataInitFuncs);
     HOOK(SystemOptionsLoad);
