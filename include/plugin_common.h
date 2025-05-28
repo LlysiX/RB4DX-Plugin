@@ -6,3 +6,5 @@ static struct proc_info procInfo;
 bool file_exists(const char*);
 
 float read_file_as_float(const char*);
+
+uint64_t get_base_address();

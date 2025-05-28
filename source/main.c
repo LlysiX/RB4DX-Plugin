@@ -83,14 +83,14 @@ void* (*NewFile)(const char*, FileMode);
 HOOK_INIT(NewFile);
 
 void NewFile_hook(const char* path, FileMode mode) {
-    char rawpath[2048];
-    strcpy(rawpath, RawfilesFolder);
+    char rawpath[2048] = {0};
+    strcat(rawpath, RawfilesFolder);
     /*if (rawpath[strlen(rawpath) - 1] != '/') {
         strcat(rawpath, "/");
     }*/
     strcat(rawpath, path);
-    char gamepath[2048];
-    strcpy(gamepath, GameRawfilesFolder);
+    char gamepath[2048] = {0};
+    strcat(gamepath, GameRawfilesFolder);
     strcat(gamepath, path);
     const char* newpath = rawpath;
     if (file_exists(newpath)) {
@@ -337,44 +337,44 @@ bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* col
     return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, toset, param_6);
 }
 
-#define ADDR_OFFSET 0x00400000
 int32_t attr_public module_start(size_t argc, const void *args)
 {
     if (sys_sdk_proc_info(&procInfo) != 0) {
-        final_printf("Failed to get process info!\n");
-        return 0;
+        final_printf("shadPS4? assuming we're 02.21\n");
+        // TODO: figure out version check and USTitleID check for shadPS4
+    } else {
+        final_printf("Started plugin! Title ID: %s\n", procInfo.titleid);
+        if (strcmp(procInfo.titleid, "CUSA02084") == 0) {
+            final_printf("US Rock Band 4 Detected!\n");
+            USTitleID = true;
+        }
+        else if (strcmp(procInfo.titleid, "CUSA02901") == 0) {
+            final_printf("EU Rock Band 4 Detected!\n");
+            USTitleID = false;
+        }
+        else {
+            final_printf("Game loaded is not Rock Band 4!\n");
+            return 0;
+        }
+        
+        if (strcmp(procInfo.version, "02.21") != 0) {
+            final_printf("This plugin is only compatible with version 02.21 of Rock Band 4.\n");
+            return 0;
+        }
     }
 
-    sys_sdk_proc_info(&procInfo);
-    final_printf("Started plugin! Title ID: %s\n", procInfo.titleid);
-    if (strcmp(procInfo.titleid, "CUSA02084") == 0) {
-        final_printf("US Rock Band 4 Detected!\n");
-        USTitleID = true;
-    }
-    else if (strcmp(procInfo.titleid, "CUSA02901") == 0) {
-        final_printf("EU Rock Band 4 Detected!\n");
-        USTitleID = false;
-    }
-    else {
-        final_printf("Game loaded is not Rock Band 4!\n");
-        return 0;
-    }
-    
-    if (strcmp(procInfo.version, "02.21") != 0) {
-        final_printf("This plugin is only compatible with version 02.21 of Rock Band 4.\n");
-        return 0;
-    }
+    uint64_t base_address = get_base_address();
 
     final_printf("Applying RB4DX hooks...\n");
     DoNotificationStatic("RB4DX Plugin loaded!");
 
-    NewFile = (void*)(procInfo.base_address + 0x00376d40);
-    GameRestart = (void*)(procInfo.base_address + 0x00a46710);
-    GetTitle = (void*)(procInfo.base_address + 0x00f28d20);
-    SetMusicSpeed = (void*)(procInfo.base_address + 0x00a470e0);
-    TscePadSetLightBar = (void*)(procInfo.base_address + 0x012450d0);
-    UpdateColors = (void*)(procInfo.base_address + 0x00f94a70);
-    DoSetColor = (void*)(procInfo.base_address + 0x001a7320);
+    NewFile = (void*)(base_address + 0x00376d40);
+    GameRestart = (void*)(base_address + 0x00a46710);
+    GetTitle = (void*)(base_address + 0x00f28d20);
+    SetMusicSpeed = (void*)(base_address + 0x00a470e0);
+    TscePadSetLightBar = (void*)(base_address + 0x012450d0);
+    UpdateColors = (void*)(base_address + 0x00f94a70);
+    DoSetColor = (void*)(base_address + 0x001a7320);
 
     // apply all hooks
     InitDTAHooks();
