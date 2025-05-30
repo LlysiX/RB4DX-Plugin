@@ -121,6 +121,10 @@ void GameRestart_hook(void* thisGame, bool restart) {
         speed = read_file_as_float("/data/GoldHEN/RB4DX/speedmod.ini");
     }
 
+    if (sys_sdk_proc_info(&procInfo) != 0) {
+        //emu: force song speed to 100% until file reads are fixed
+        speed = 1.00;
+    }
 
     if (speed > 0.00 && speed != 1.00){
         SetMusicSpeed(thisGame, speed);
@@ -150,26 +154,31 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
 
     bool speedfile = file_exists("/data/GoldHEN/RB4DX/speedmod.ini");
     float speed = 1.00;
-    char speedtitleint[512];
-    char speedtxt[512];
+    char speedtitleint[512] = {0};
+    char speedtxt[512] = { 0 };
     char* speedtitle;
-    strcpy(speedtitleint, thisMetadata->mTitle);
+    strcat(speedtitleint, thisMetadata->mTitle);
 
     bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
-    char aptitleint[512];
-    strcpy(aptitleint, thisMetadata->mTitle);
+    char aptitleint[512] = { 0 };
+    strcat(aptitleint, thisMetadata->mTitle);
     strcat(aptitleint, autoplaytitle);
     char* aptitle = aptitleint;
 
     bool drunkmode = file_exists("/data/GoldHEN/RB4DX/drunkmode.ini");
-    char dmtitleint[512];
-    strcpy(dmtitleint, thisMetadata->mTitle);
+    char dmtitleint[512] = { 0 };
+    strcat(dmtitleint, thisMetadata->mTitle);
     strcat(dmtitleint, drunkmodetitle);
     char* dmtitle = dmtitleint;
 
 
     if (speedfile) {
         speed = read_file_as_float("/data/GoldHEN/RB4DX/speedmod.ini") * 100;
+    }
+
+    if (sys_sdk_proc_info(&procInfo) != 0) {
+        //emu: force song speed to 100% until file reads are fixed
+        speed = 100;
     }
 
     //final_printf("songtitle: %s\n", thisMetadata->mTitle);
@@ -289,7 +298,7 @@ bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* col
     Color newcolorb;
     Color newcoloro;
 
-    char coltest[9];
+    char coltest[9] = { 0 };
     sprintf(coltest, "%f", toset->r);
     //none
     if ((strcmp(coltest, "0.130136") != 0) && (strcmp(coltest, "0.242281") != 0) && (strcmp(coltest, "0.896269") != 0) && (strcmp(coltest, "0.791298") != 0) && (strcmp(coltest, "0.011612") != 0) && (strcmp(coltest, "0.004025") != 0) && (strcmp(coltest, "0.745404") != 0) && (strcmp(coltest, "0.814847") != 0))
