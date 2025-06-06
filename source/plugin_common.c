@@ -8,10 +8,10 @@
 static uint64_t base_address = 0;
 
 // shadPS4 base address (old)
-//#define SHADPS4_BASE 0x8ffffc000
+#define SHADPS4_BASE 0x8ffffc000
 
 // shadPS4 base address (new)
-#define SHADPS4_BASE 0x800000000 
+//#define SHADPS4_BASE 0x800000000 
 
 uint64_t get_base_address() {
     if (base_address != 0) {

@@ -21,9 +21,9 @@
 #include <orbis/Pad.h>
 #include "plugin_common.h"
 #include "DTAFuncs.h"
-#include "Autoplay.h"
-#include "rb4/songmetadata.h"
-#include "rb4/gemsmasher.h"
+//#include "Autoplay.h"
+//#include "rb4/songmetadata.h"
+//#include "rb4/gemsmasher.h"
 
 attr_public const char *g_pluginName = PLUGIN_NAME;
 attr_public const char *g_pluginDesc = "Plugin for loading Rock Band 4 Deluxe files, among other enhancements.";
@@ -31,7 +31,7 @@ attr_public const char *g_pluginAuth = "LysiX";
 attr_public uint32_t g_pluginVersion = 0x00000100; // 1.00
 
 void DoNotificationStatic(const char* text) {
-    bool NotifyColored = file_exists("/data/GoldHEN/RB4DX/notifycolored.ini");
+    bool NotifyColored = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/notifycolored.ini");
     OrbisNotificationRequest Buffer = { 0 };
     Buffer.useIconImageUri = 1;
     Buffer.targetId = -1;
@@ -44,7 +44,7 @@ void DoNotificationStatic(const char* text) {
 }
 
 void DoNotification(const char *FMT, ...) {
-    bool NotifyColored = file_exists("/data/GoldHEN/RB4DX/notifycolored.ini");
+    bool NotifyColored = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/notifycolored.ini");
     OrbisNotificationRequest Buffer = { 0 };
     va_list args;
     va_start(args, FMT);
@@ -64,8 +64,8 @@ void DoNotification(const char *FMT, ...) {
 bool USTitleID = true;
 
 // ARKless file loading hook
-const char* RawfilesFolder = "/data/GoldHEN/RB4DX/";
-const char* GameRawfilesFolder = "data:/GoldHEN/RB4DX/";
+const char* RawfilesFolder = "/data/GoldHEN/RB4DX-1.08/";
+const char* GameRawfilesFolder = "data:/GoldHEN/RB4DX-1.08/";
 bool PrintRawfiles = false;
 bool PrintArkfiles = false;
 
@@ -85,9 +85,6 @@ HOOK_INIT(NewFile);
 void NewFile_hook(const char* path, FileMode mode) {
     char rawpath[2048] = {0};
     strcat(rawpath, RawfilesFolder);
-    /*if (rawpath[strlen(rawpath) - 1] != '/') {
-        strcat(rawpath, "/");
-    }*/
     strcat(rawpath, path);
     char gamepath[2048] = {0};
     strcat(gamepath, GameRawfilesFolder);
@@ -104,6 +101,8 @@ void NewFile_hook(const char* path, FileMode mode) {
 }
 
 //speed hack
+
+/*
 void(*GameRestart)(void*, bool);
 void(*SetMusicSpeed)(void*, float);
 
@@ -199,27 +198,12 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
     }
     else
         return thisMetadata->mTitle;
-}
-
-//read lightbar status
-
-int(*TscePadSetLightBar)(int handle, OrbisPadColor *inputColor);
-
-HOOK_INIT(TscePadSetLightBar);
-
-void TscePadSetLightBar_hook(int handle, OrbisPadColor *inputColor) {
-    //final_printf("Set Light Bar Color:\n"); //disabled due to log spam
-    //final_printf("R: %d\n", inputColor->r);
-    //final_printf("G: %d\n", inputColor->g);
-    //final_printf("B: %d\n", inputColor->b);
-    scePadSetLightBar(handle, inputColor);
-    return;
-}
+}*/
 
 // Custom gem colors from RBVREnhanced, updated to set gems individually instead of all at once
 // TODO: FIND SUSTAIN COLOR
 
-bool(*UpdateColors)(RBGemSmasherCom* thiscom);
+/* bool(*UpdateColors)(RBGemSmasherCom* thiscom);
 
 HOOK_INIT(UpdateColors);
 
@@ -344,12 +328,12 @@ bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* col
         return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcoloro, param_6);
     }
     return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, toset, param_6);
-}
+}*/
 
 int32_t attr_public module_start(size_t argc, const void *args)
 {
     if (sys_sdk_proc_info(&procInfo) != 0) {
-        final_printf("shadPS4? assuming we're 02.21\n");
+        final_printf("shadPS4? assuming we're 01.08\n");
         // TODO: figure out version check and USTitleID check for shadPS4
     } else {
         final_printf("Started plugin! Title ID: %s\n", procInfo.titleid);
@@ -366,8 +350,8 @@ int32_t attr_public module_start(size_t argc, const void *args)
             return 0;
         }
         
-        if (strcmp(procInfo.version, "02.21") != 0) {
-            final_printf("This plugin is only compatible with version 02.21 of Rock Band 4.\n");
+        if (strcmp(procInfo.version, "01.08") != 0) {
+            final_printf("This plugin is only compatible with version 01.08 of Rock Band 4.\n");
             return 0;
         }
     }
@@ -377,23 +361,21 @@ int32_t attr_public module_start(size_t argc, const void *args)
     final_printf("Applying RB4DX hooks...\n");
     DoNotificationStatic("RB4DX Plugin loaded!");
 
-    NewFile = (void*)(base_address + 0x00376d40);
-    GameRestart = (void*)(base_address + 0x00a46710);
-    GetTitle = (void*)(base_address + 0x00f28d20);
-    SetMusicSpeed = (void*)(base_address + 0x00a470e0);
-    TscePadSetLightBar = (void*)(base_address + 0x012450d0);
-    UpdateColors = (void*)(base_address + 0x00f94a70);
-    DoSetColor = (void*)(base_address + 0x001a7320);
+    NewFile = (void*)(base_address + 0x007acef0);
+    //GameRestart = (void*)(base_address + 0x00a46710);
+    //GetTitle = (void*)(base_address + 0x00f28d20);
+    //SetMusicSpeed = (void*)(base_address + 0x00a470e0);
+    //UpdateColors = (void*)(base_address + 0x00f94a70);
+    //DoSetColor = (void*)(base_address + 0x001a7320);
 
     // apply all hooks
     InitDTAHooks();
-    InitAutoplayHooks();
-    HOOK(GameRestart);
-    HOOK(GetTitle);
+    //InitAutoplayHooks();
+    //HOOK(GameRestart);
+    //HOOK(GetTitle);
     HOOK(NewFile);
-    HOOK(TscePadSetLightBar);
-    HOOK(UpdateColors);
-    HOOK(DoSetColor);
+    //HOOK(UpdateColors);
+    //HOOK(DoSetColor);
 
     return 0;
 }
@@ -403,12 +385,11 @@ int32_t attr_public module_stop(size_t argc, const void *args)
     final_printf("Stopping plugin...\n");
     // unhook everything just in case
     DestroyDTAHooks();
-    DestroyAutoplayHooks();
-    UNHOOK(GameRestart);
-    UNHOOK(GetTitle);
+    //DestroyAutoplayHooks();
+    //UNHOOK(GameRestart);
+    //UNHOOK(GetTitle);
     UNHOOK(NewFile);
-    UNHOOK(TscePadSetLightBar);
-    UNHOOK(UpdateColors);
-    UNHOOK(DoSetColor);
+    //UNHOOK(UpdateColors);
+    //UNHOOK(DoSetColor);
     return 0;
 }
