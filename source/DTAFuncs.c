@@ -391,6 +391,14 @@ DataNode* DxEmuFileDelete(DataNode* ret, DataArray* args) {
     return ret;
 }
 
+DataNode* DxForceSym(DataNode* ret, DataArray* args) {
+    DataNode _Arg = *(args->mNodes + 1);
+    Symbol Arg = DataNodeForceSym(&_Arg, args);
+    ret->mType = kDataSymbol;
+    ret->mValue.symbol = Arg.sym;
+    return ret;
+}
+
 HOOK_INIT(DataInitFuncs);
 
 void DataInitFuncs_hook() {
@@ -442,6 +450,9 @@ void DataInitFuncs_hook() {
     // DX: base name with file extentions
     Symbol_Ctor(&funcsym, "basename_ext");
     DataRegisterFunc(funcsym, DataBaseNameExt);
+    // Allow DataForceSym to be called from DTA
+    Symbol_Ctor(&funcsym, "force_sym");
+    DataRegisterFunc(funcsym, DxForceSym);
 
     //// get calibration offset in dta in ms
     //Symbol_Ctor(&funcsym, "get_audio_calibration");
