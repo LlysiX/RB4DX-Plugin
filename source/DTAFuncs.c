@@ -399,6 +399,17 @@ DataNode* DxForceSym(DataNode* ret, DataArray* args) {
     return ret;
 }
 
+DataNode* DataIsEmulator(DataNode* ret, DataArray* args) {
+    ret->mType = kDataInt;
+    if (sys_sdk_proc_info(&procInfo) != 0) {
+        ret->mValue.value = 1;
+    }
+    else {
+        ret->mValue.value = 0;
+    }
+    return ret;
+}
+
 HOOK_INIT(DataInitFuncs);
 
 void DataInitFuncs_hook() {
@@ -453,6 +464,9 @@ void DataInitFuncs_hook() {
     // Allow DataForceSym to be called from DTA
     Symbol_Ctor(&funcsym, "force_sym");
     DataRegisterFunc(funcsym, DxForceSym);
+    // Emulation check
+    Symbol_Ctor(&funcsym, "is_emu");
+    DataRegisterFunc(funcsym, DataIsEmulator);
 
     //// get calibration offset in dta in ms
     //Symbol_Ctor(&funcsym, "get_audio_calibration");
