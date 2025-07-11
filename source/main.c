@@ -20,9 +20,10 @@
 #include <orbis/Sysmodule.h>
 #include <orbis/Pad.h>
 #include "plugin_common.h"
+#include "rb4/data.h"
 #include "DTAFuncs.h"
 //#include "Autoplay.h"
-//#include "rb4/songmetadata.h"
+#include "rb4/songmetadata.h"
 //#include "rb4/gemsmasher.h"
 
 attr_public const char *g_pluginName = PLUGIN_NAME;
@@ -102,7 +103,7 @@ void NewFile_hook(const char* path, FileMode mode) {
 
 //speed hack
 
-/*
+
 void(*GameRestart)(void*, bool);
 void(*SetMusicSpeed)(void*, float);
 
@@ -111,13 +112,13 @@ HOOK_INIT(GameRestart);
 void GameRestart_hook(void* thisGame, bool restart) {
     HOOK_CONTINUE(GameRestart, void (*)(void*, bool), thisGame, restart);
     float speed = 1.00;
-    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
-    bool drunkmode = file_exists("/data/GoldHEN/RB4DX/drunkmode.ini");
-    bool insong = file_exists("/data/GoldHEN/RB4DX/insong.dta");
-    bool speedfile = file_exists("/data/GoldHEN/RB4DX/speedmod.ini");
+    bool autoplay = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/autoplay.ini");
+    bool drunkmode = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/drunkmode.ini");
+    bool insong = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/insong.dta");
+    bool speedfile = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/speedmod.ini");
 
     if (speedfile) {
-        speed = read_file_as_float("/data/GoldHEN/RB4DX/speedmod.ini");
+        speed = read_file_as_float("/data/GoldHEN/RB4DX-1.08/plugin/speedmod.ini");
     }
 
     if (sys_sdk_proc_info(&procInfo) != 0) {
@@ -147,24 +148,24 @@ const char* drunkmodetitle = " (DRUNK MODE)";
 HOOK_INIT(GetTitle);
 
 char* GetTitle_hook(SongMetadata* thisMetadata) {
-    bool insong = file_exists("/data/GoldHEN/RB4DX/insong.dta");
+    bool insong = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/insong.dta");
     if (!insong)
         return  thisMetadata->mTitle;
 
-    bool speedfile = file_exists("/data/GoldHEN/RB4DX/speedmod.ini");
+    bool speedfile = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/speedmod.ini");
     float speed = 1.00;
     char speedtitleint[512] = {0};
     char speedtxt[512] = { 0 };
     char* speedtitle;
     strcat(speedtitleint, thisMetadata->mTitle);
 
-    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
+    bool autoplay = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/autoplay.ini");
     char aptitleint[512] = { 0 };
     strcat(aptitleint, thisMetadata->mTitle);
     strcat(aptitleint, autoplaytitle);
     char* aptitle = aptitleint;
 
-    bool drunkmode = file_exists("/data/GoldHEN/RB4DX/drunkmode.ini");
+    bool drunkmode = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/drunkmode.ini");
     char dmtitleint[512] = { 0 };
     strcat(dmtitleint, thisMetadata->mTitle);
     strcat(dmtitleint, drunkmodetitle);
@@ -172,7 +173,7 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
 
 
     if (speedfile) {
-        speed = read_file_as_float("/data/GoldHEN/RB4DX/speedmod.ini") * 100;
+        speed = read_file_as_float("/data/GoldHEN/RB4DX-1.08/plugin/speedmod.ini") * 100;
     }
 
     if (sys_sdk_proc_info(&procInfo) != 0) {
@@ -198,7 +199,7 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
     }
     else
         return thisMetadata->mTitle;
-}*/
+}
 
 // Custom gem colors from RBVREnhanced, updated to set gems individually instead of all at once
 // TODO: FIND SUSTAIN COLOR
@@ -362,9 +363,9 @@ int32_t attr_public module_start(size_t argc, const void *args)
     DoNotificationStatic("RB4DX Plugin loaded!");
 
     NewFile = (void*)(base_address + 0x007acef0);
-    //GameRestart = (void*)(base_address + 0x00a46710);
-    //GetTitle = (void*)(base_address + 0x00f28d20);
-    //SetMusicSpeed = (void*)(base_address + 0x00a470e0);
+    GameRestart = (void*)(base_address + 0x0008b930);
+    GetTitle = (void*)(base_address + 0x004035e0);
+    SetMusicSpeed = (void*)(base_address + 0x0008c3c0);
     //UpdateColors = (void*)(base_address + 0x00f94a70);
     //DoSetColor = (void*)(base_address + 0x001a7320);
 

@@ -23,14 +23,14 @@ void(*DataRegisterFunc)(Symbol, DataFunc);
 Symbol(*DataNodeForceSym)(DataNode*, DataArray*);
 float (*DataNodeFloat)(DataNode*, DataArray*);
 DataNode* (*DataExecuteString)(DataNode* __return_storage_ptr__, char* param_1);
-//SystemOptions* options;
+SystemOptions* options;
 
 DataNode* DataFileRename(DataNode* ret, DataArray* args) {
     final_printf("renaming file!\n");
-    DataNode _firstArg = *(args->mNodes + 1);
+    DataNode _firstArg = (args->mNodes->n[1]);
     Symbol firstArgsym = DataNodeForceSym(&_firstArg, args);
     char* firstArg = firstArgsym.sym;
-    DataNode _secondArg = *(args->mNodes + 2);
+    DataNode _secondArg = (args->mNodes->n[2]);
     Symbol secondArgsym = DataNodeForceSym(&_secondArg, args);
     char* secondArg = secondArgsym.sym;
     sceKernelRename(firstArg, secondArg);
@@ -46,7 +46,7 @@ DataNode* DxFileRename(DataNode* ret, DataArray* args) {
     final_printf("renaming file!\n");
     // set up first arg
     char __firstArg[2048] = { 0 };
-    DataNode _firstArg = *(args->mNodes + 1);
+    DataNode _firstArg = (args->mNodes->n[1]);
     Symbol firstArgsym = DataNodeForceSym(&_firstArg, args);
     strcat(__firstArg, DXFolder);
     strcat(__firstArg, firstArgsym.sym);
@@ -54,7 +54,7 @@ DataNode* DxFileRename(DataNode* ret, DataArray* args) {
 
     // set up second arg
     char __secondArg[2048] = { 0 };
-    DataNode _secondArg = *(args->mNodes + 2);
+    DataNode _secondArg = (args->mNodes->n[2]);
     Symbol secondArgsym = DataNodeForceSym(&_secondArg, args);
     strcat(__secondArg, DXFolder);
     strcat(__secondArg, secondArgsym.sym);
@@ -71,7 +71,7 @@ DataNode* DxFileRename(DataNode* ret, DataArray* args) {
 
 DataNode* DxFileExists(DataNode* ret, DataArray* args) {
     char __Arg[2048] = { 0 };
-    DataNode _Arg = *(args->mNodes + 1);
+    DataNode _Arg = (args->mNodes->n[1]);
     Symbol Argsym = DataNodeForceSym(&_Arg, args);
     strcat(__Arg, DXFolder);
     strcat(__Arg, Argsym.sym);
@@ -83,7 +83,7 @@ DataNode* DxFileExists(DataNode* ret, DataArray* args) {
 
 DataNode* DxFileDelete(DataNode* ret, DataArray* args) {
     char __Arg[2048] = { 0 };
-    DataNode _Arg = *(args->mNodes + 1);
+    DataNode _Arg = (args->mNodes->n[1]);
     Symbol Argsym = DataNodeForceSym(&_Arg, args);
     strcat(__Arg, DXFolder);
     strcat(__Arg, Argsym.sym);
@@ -96,7 +96,7 @@ DataNode* DxFileDelete(DataNode* ret, DataArray* args) {
 
 DataNode* DxFileMkdir(DataNode* ret, DataArray* args) {
     char __Arg[2048] = { 0 };
-    DataNode _Arg = *(args->mNodes + 1);
+    DataNode _Arg = (args->mNodes->n[1]);
     Symbol Argsym = DataNodeForceSym(&_Arg, args);
     strcat(__Arg, DXFolder);
     strcat(__Arg, Argsym.sym);
@@ -108,7 +108,7 @@ DataNode* DxFileMkdir(DataNode* ret, DataArray* args) {
 }
 
 DataNode* FileRmdir(DataNode* ret, DataArray* args) {
-    DataNode _Arg = *(args->mNodes + 1);
+    DataNode _Arg = (args->mNodes->n[1]);
     Symbol Argsym = DataNodeForceSym(&_Arg, args);
     char* Arg = Argsym.sym;
     sceKernelRmdir(Arg);
@@ -119,7 +119,7 @@ DataNode* FileRmdir(DataNode* ret, DataArray* args) {
 
 DataNode* DxFileRmdir(DataNode* ret, DataArray* args) {
     char __Arg[2048] = { 0 };
-    DataNode _Arg = *(args->mNodes + 1);
+    DataNode _Arg = (args->mNodes->n[1]);
     Symbol Argsym = DataNodeForceSym(&_Arg, args);
     strcat(__Arg, DXFolder);
     strcat(__Arg, Argsym.sym);
@@ -132,7 +132,7 @@ DataNode* DxFileRmdir(DataNode* ret, DataArray* args) {
 
 DataNode* DxWriteNullFile(DataNode* ret, DataArray* args) {
     char __Arg[2048] = { 0 };
-    DataNode _Arg = *(args->mNodes + 1);
+    DataNode _Arg = (args->mNodes->n[1]);
     Symbol Argsym = DataNodeForceSym(&_Arg, args);
     strcat(__Arg, DXFolder);
     strcat(__Arg, Argsym.sym);
@@ -146,10 +146,10 @@ DataNode* DxWriteNullFile(DataNode* ret, DataArray* args) {
 
 DataNode* DataFileCopy(DataNode* ret, DataArray* args) {
     final_printf("Copying file!\n");
-    DataNode _firstArg = *(args->mNodes + 1);
+    DataNode _firstArg = (args->mNodes->n[1]);
     Symbol firstArgsym = DataNodeForceSym(&_firstArg, args);
     char* firstArg = firstArgsym.sym;
-    DataNode _secondArg = *(args->mNodes + 2);
+    DataNode _secondArg = (args->mNodes->n[2]);
     Symbol secondArgsym = DataNodeForceSym(&_secondArg, args);
     char* secondArg = secondArgsym.sym;
     if (file_exists(firstArg)) {
@@ -180,7 +180,7 @@ DataNode* DxFileCopy(DataNode* ret, DataArray* args) {
     final_printf("Copying file!\n");
     // set up first arg
     char __firstArg[2048] = { 0 };
-    DataNode _firstArg = *(args->mNodes + 1);
+    DataNode _firstArg = (args->mNodes->n[1]);
     Symbol firstArgsym = DataNodeForceSym(&_firstArg, args);
     strcat(__firstArg, DXFolder);
     strcat(__firstArg, firstArgsym.sym);
@@ -202,7 +202,7 @@ DataNode* DxFileCopy(DataNode* ret, DataArray* args) {
 
     // set up second arg
     char __secondArg[2048] = { 0 };
-    DataNode _secondArg = *(args->mNodes + 2);
+    DataNode _secondArg = (args->mNodes->n[2]);
     Symbol secondArgsym = DataNodeForceSym(&_secondArg, args);
     strcat(__secondArg, DXFolder);
     strcat(__secondArg, secondArgsym.sym);
@@ -234,43 +234,43 @@ DataNode* DxFileCopy(DataNode* ret, DataArray* args) {
     return ret;
 }
 
-//// get calibration offset in dta in ms
-//
-//DataNode* GetAudioCalibration(DataNode* ret, DataArray* args) {
-//    ret->mType = kDataInt;
-//    ret->mValue.value = options->mAudioOffset;
-//    return ret;
-//}
-//
-//DataNode* GetVideoCalibration(DataNode* ret, DataArray* args) {
-//    ret->mType = kDataInt;
-//    ret->mValue.value = options->mVideoOffset;
-//    return ret;
-//}
-//
-//// set calibration offset in dta in ms 
-//
-//DataNode* SetAudioCalibration(DataNode* ret, DataArray* args) {
-//    DataNode _Arg = *(args->mNodes + 1);
-//    float Argfloat = DataNodeFloat(&_Arg, args);
-//    if (options != NULL) {
-//        options->mAudioOffset = Argfloat;
-//    }
-//    ret->mType = kDataInt;
-//    ret->mValue.value = 1;
-//    return ret;
-//}
-//
-//DataNode* SetVideoCalibration(DataNode* ret, DataArray* args) {
-//    DataNode _Arg = *(args->mNodes + 1);
-//    float Argfloat = DataNodeFloat(&_Arg, args);
-//    if (options != NULL) {
-//        options->mVideoOffset = Argfloat;
-//    }
-//    ret->mType = kDataInt;
-//    ret->mValue.value = 1;
-//    return ret;
-//}
+// get calibration offset in dta in ms
+
+DataNode* GetAudioCalibration(DataNode* ret, DataArray* args) {
+    ret->mType = kDataInt;
+    ret->mValue.value = options->mAudioOffset;
+    return ret;
+}
+
+DataNode* GetVideoCalibration(DataNode* ret, DataArray* args) {
+    ret->mType = kDataInt;
+    ret->mValue.value = options->mVideoOffset;
+    return ret;
+}
+
+// set calibration offset in dta in ms 
+
+DataNode* SetAudioCalibration(DataNode* ret, DataArray* args) {
+    DataNode _Arg = (args->mNodes->n[1]);
+    float Argfloat = DataNodeFloat(&_Arg, args);
+    if (options != NULL) {
+        options->mAudioOffset = Argfloat;
+    }
+    ret->mType = kDataInt;
+    ret->mValue.value = 1;
+    return ret;
+}
+
+DataNode* SetVideoCalibration(DataNode* ret, DataArray* args) {
+    DataNode _Arg = (args->mNodes->n[1]);
+    float Argfloat = DataNodeFloat(&_Arg, args);
+    if (options != NULL) {
+        options->mVideoOffset = Argfloat;
+    }
+    ret->mType = kDataInt;
+    ret->mValue.value = 1;
+    return ret;
+}
 
 #ifndef FILESYSTEM_PREFIX_LEN
 #define FILESYSTEM_PREFIX_LEN(f) 0
@@ -293,7 +293,7 @@ base_name(char const* name)
 }
 
 DataNode* DataBaseNameExt(DataNode* ret, DataArray* args) {
-    DataNode _Arg = *(args->mNodes + 1);
+    DataNode _Arg = (args->mNodes->n[1]);
     Symbol Argsym = DataNodeForceSym(&_Arg, args);
     char* Arg = Argsym.sym;
     char* filebase = base_name(Arg);
@@ -305,7 +305,7 @@ DataNode* DataBaseNameExt(DataNode* ret, DataArray* args) {
 DataNode* EmuFileDelete(DataNode* ret, DataArray* args) {
     char buf[2048] = { 0 };
 
-    DataNode _firstArg = *(args->mNodes + 1);
+    DataNode _firstArg = (args->mNodes->n[1]);
     Symbol firstArgsym = DataNodeForceSym(&_firstArg, args);
     char* firstArg = firstArgsym.sym;
 
@@ -322,7 +322,7 @@ DataNode* EmuFileDelete(DataNode* ret, DataArray* args) {
     DataExecuteString(ret, buf);
     buf[0] = '\0';
 
-    DataNode _secondArg = *(args->mNodes + 2);
+    DataNode _secondArg = (args->mNodes->n[2]);
     Symbol secondArgsym = DataNodeForceSym(&_secondArg, args);
     char* secondArg = secondArgsym.sym;
     strcat(buf, "{set $todel \"");
@@ -364,7 +364,7 @@ DataNode* EmuFileDelete(DataNode* ret, DataArray* args) {
 DataNode* DxEmuFileDelete(DataNode* ret, DataArray* args) {
     char buf[2048] = { 0 };
 
-    DataNode _firstArg = *(args->mNodes + 1);
+    DataNode _firstArg = (args->mNodes->n[1]);
     Symbol firstArgsym = DataNodeForceSym(&_firstArg, args);
     char* firstArg = firstArgsym.sym;
     strcat(buf, "{set $dx_path \"");
@@ -373,7 +373,7 @@ DataNode* DxEmuFileDelete(DataNode* ret, DataArray* args) {
     DataExecuteString(ret, buf);
     buf[0] = '\0';
 
-    DataNode _secondArg = *(args->mNodes + 2);
+    DataNode _secondArg = (args->mNodes->n[2]);
     Symbol secondArgsym = DataNodeForceSym(&_secondArg, args);
     char* secondArg = secondArgsym.sym;
     strcat(buf, "{set $dx_file \"");
@@ -392,7 +392,7 @@ DataNode* DxEmuFileDelete(DataNode* ret, DataArray* args) {
 }
 
 DataNode* DxForceSym(DataNode* ret, DataArray* args) {
-    DataNode _Arg = *(args->mNodes + 1);
+    DataNode _Arg = (args->mNodes->n[1]);
     Symbol Arg = DataNodeForceSym(&_Arg, args);
     ret->mType = kDataSymbol;
     ret->mValue.symbol = Arg.sym;
@@ -468,64 +468,63 @@ void DataInitFuncs_hook() {
     Symbol_Ctor(&funcsym, "is_emu");
     DataRegisterFunc(funcsym, DataIsEmulator);
 
-    //// get calibration offset in dta in ms
-    //Symbol_Ctor(&funcsym, "get_audio_calibration");
-    //DataRegisterFunc(funcsym, GetAudioCalibration);
+    // get calibration offset in dta in ms
+    Symbol_Ctor(&funcsym, "get_audio_calibration");
+    DataRegisterFunc(funcsym, GetAudioCalibration);
 
-    //Symbol_Ctor(&funcsym, "get_video_calibration");
-    //DataRegisterFunc(funcsym, GetVideoCalibration);
+    Symbol_Ctor(&funcsym, "get_video_calibration");
+    DataRegisterFunc(funcsym, GetVideoCalibration);
 
 
 
-    //// set calibration offset in dta in ms 
-    //Symbol_Ctor(&funcsym, "set_audio_calibration");
-    //DataRegisterFunc(funcsym, SetAudioCalibration);
+    // set calibration offset in dta in ms 
+    Symbol_Ctor(&funcsym, "set_audio_calibration");
+    DataRegisterFunc(funcsym, SetAudioCalibration);
 
-    //Symbol_Ctor(&funcsym, "set_video_calibration");
-    //DataRegisterFunc(funcsym, SetVideoCalibration);
+    Symbol_Ctor(&funcsym, "set_video_calibration");
+    DataRegisterFunc(funcsym, SetVideoCalibration);
 
     //add original dta functions
     HOOK_CONTINUE(DataInitFuncs, void (*)());
 }
 
-//void (*SystemOptionsLoad)(SystemOptions*, void*);
-//
-//HOOK_INIT(SystemOptionsLoad);
-//
-//void SystemOptionsLoad_hook(SystemOptions* thisoptions, void* binstream) {
-//    //DoNotificationStatica("systemoptions::load");
-//    options = thisoptions;
-//    HOOK_CONTINUE(SystemOptionsLoad, void (*)(SystemOptions*, void*), thisoptions, binstream);
-//    //force override calibration if not saved in the save file
-//    if (file_exists("/data/GoldHEN/RB4DX/videocalib.ini")) {
-//        options->mVideoOffset = read_file_as_float("/data/GoldHEN/RB4DX/videocalib.ini");
-//    }
-//    if (file_exists("/data/GoldHEN/RB4DX/audiocalib.ini")) {
-//        options->mAudioOffset = read_file_as_float("/data/GoldHEN/RB4DX/audiocalib.ini");
-//    }
-//    //DoNotificationa("Audio Offset Set: %.0f", thisoptions->mAudioOffset); // 260
-//    //DoNotificationa("Video Offset Set: %.0f", thisoptions->mVideoOffset); // 260
-//    return;
-//}
-//
-//void (*RBSystemOptionsSave)(void*, void*);
-//
-//HOOK_INIT(RBSystemOptionsSave);
-//
-//void RBSystemOptionsSave_hook(void* thisoptions, void* binstream) {
-//    //DoNotificationStatica("systemoptions::save");
-//    //options = thisoptions;
-//    HOOK_CONTINUE(RBSystemOptionsSave, void (*)(void*, void*), thisoptions, binstream);
-//    //DoNotificationa("Audio Offset Set: %.0f", thisoptions->mAudioOffset);
-//    // delete force override files when this is called
-//    if (file_exists("/data/GoldHEN/RB4DX/videocalib.ini")) {
-//        remove("/data/GoldHEN/RB4DX/videocalib.ini");
-//    }
-//    if (file_exists("/data/GoldHEN/RB4DX/audiocalib.ini")) {
-//        remove("/data/GoldHEN/RB4DX/audiocalib.ini");
-//    }
-//    return;
-//}
+void (*SystemOptionsLoad)(SystemOptions*, void*);
+
+HOOK_INIT(SystemOptionsLoad);
+
+void SystemOptionsLoad_hook(SystemOptions* thisoptions, void* binstream) {
+    //DoNotificationStatica("systemoptions::load");
+    options = thisoptions;
+    HOOK_CONTINUE(SystemOptionsLoad, void (*)(SystemOptions*, void*), thisoptions, binstream);
+    //force override calibration if not saved in the save file
+    //DoNotificationa("Audio Offset Set: %.0f", thisoptions->mAudioOffset); // 260
+    //DoNotificationa("Video Offset Set: %.0f", thisoptions->mVideoOffset); // 260
+    return;
+}
+
+void (*RBSystemOptionsSave)(void*, void*);
+
+HOOK_INIT(RBSystemOptionsSave);
+
+void RBSystemOptionsSave_hook(void* thisoptions, void* binstream) {
+    DataNode ret;
+    //DoNotificationStatica("systemoptions::save");
+    //options = thisoptions;
+    if (file_exists("/data/GoldHEN/RB4DX-1.08/plugin/calibration.ini")) {
+        DataExecuteString(&ret, "{set $calibration {read_file 'data:/GoldHEN/RB4DX-1.08/plugin/calibration.ini'}}");
+        DataExecuteString(&ret, "{foreach $entry $calibration {if {== {elem $entry 0} {basename video}} {set_video_calibration {elem {find $entry video} 1}} } {if {== {elem $entry 0} {basename audio}} {set_audio_calibration {elem {find $entry audio} 1}} } }");
+    }
+
+    HOOK_CONTINUE(RBSystemOptionsSave, void (*)(void*, void*), thisoptions, binstream);
+    //DoNotificationa("Audio Offset Set: %.0f", thisoptions->mAudioOffset);
+    
+    // delete force override files when this is called
+    if (file_exists("/data/GoldHEN/RB4DX-1.08/plugin/calibration.ini")) {
+        remove("/data/GoldHEN/RB4DX-1.08/plugin/calibration.ini");
+        DataExecuteString(&ret, "{dx_emu_file_delete 'plugin' 'calibration.ini'}");
+    }
+    return;
+}
 
 void InitDTAHooks() {
     uint64_t base_address = get_base_address();
@@ -533,19 +532,19 @@ void InitDTAHooks() {
     DataInitFuncs = (void*)(base_address + 0x006d2720);
     DataRegisterFunc = (void*)(base_address + 0x006d25d0);
     DataNodeForceSym = (void*)(base_address + 0x006ed810);
-    //DataNodeFloat = (void*)(base_address + 0x0000ee30);
+    DataNodeFloat = (void*)(base_address + 0x00bef6a0);
     Symbol_Ctor = (void*)(base_address + 0x00708d40);
-    //SystemOptionsLoad = (void*)(base_address + 0x011b2310);
-    //RBSystemOptionsSave = (void*)(base_address + 0x00d667c0);
+    SystemOptionsLoad = (void*)(base_address + 0x00801e50);
+    RBSystemOptionsSave = (void*)(base_address + 0x0046a760);
     DataExecuteString = (void*)(base_address + 0x006cd2c0);
 
     HOOK(DataInitFuncs);
-    //HOOK(SystemOptionsLoad);
-    //HOOK(RBSystemOptionsSave);
+    HOOK(SystemOptionsLoad);
+    HOOK(RBSystemOptionsSave);
 }
 
 void DestroyDTAHooks() {
     UNHOOK(DataInitFuncs);
-    //UNHOOK(SystemOptionsLoad);
-    //UNHOOK(RBSystemOptionsSave);
+    UNHOOK(SystemOptionsLoad);
+    UNHOOK(RBSystemOptionsSave);
 }
