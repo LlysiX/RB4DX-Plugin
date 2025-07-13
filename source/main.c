@@ -103,40 +103,41 @@ void NewFile_hook(const char* path, FileMode mode) {
 
 //speed hack
 
-
+float songspeed = 1.00;
 void(*GameRestart)(void*, bool);
 void(*SetMusicSpeed)(void*, float);
+void(*RBMetaStateGoto)(void*, int);
 
 HOOK_INIT(GameRestart);
 
 void GameRestart_hook(void* thisGame, bool restart) {
     HOOK_CONTINUE(GameRestart, void (*)(void*, bool), thisGame, restart);
-    float speed = 1.00;
     bool autoplay = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/autoplay.ini");
     bool drunkmode = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/drunkmode.ini");
     bool insong = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/insong.dta");
     bool speedfile = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/speedmod.ini");
 
-    if (speedfile) {
-        speed = read_file_as_float("/data/GoldHEN/RB4DX-1.08/plugin/speedmod.ini");
-    }
-
-    if (sys_sdk_proc_info(&procInfo) != 0) {
-        //emu: force song speed to 100% until file reads are fixed
-        speed = 1.00;
-    }
-
-    if (speed > 0.00 && speed != 1.00){
-        SetMusicSpeed(thisGame, speed);
-        final_printf("Music speed: %.2f\n", speed);
+    if (songspeed > 0.00 && songspeed != 1.00){
+        SetMusicSpeed(thisGame, songspeed);
+        final_printf("Music speed: %.2f\n", songspeed);
         if (!insong || autoplay || drunkmode)
-            DoNotification("Music Speed Set: %.2f", speed);
+            DoNotification("Music Speed Set: %.2f", songspeed);
     }
     if (autoplay) {
         final_printf("Autoplay Enabled!\n");
         if (!insong)
             DoNotificationStatic("Autoplay Enabled!");
     }
+    return;
+}
+
+HOOK_INIT(RBMetaStateGoto);
+
+void RBMetaStateGoto_hook(void* thisMetaState, int state) {
+    HOOK_CONTINUE(RBMetaStateGoto, void (*)(void*, int), thisMetaState, state);
+    DataNode ret;
+    if (state != 3 && state != 44 && file_exists("/data/GoldHEN/RB4DX-1.08/plugin/insong.dta"))
+        DataExecuteString(&ret, "{dx_emu_file_delete 'plugin' 'insong.dta'}");
     return;
 }
 
@@ -152,8 +153,7 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
     if (!insong)
         return  thisMetadata->mTitle;
 
-    bool speedfile = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/speedmod.ini");
-    float speed = 1.00;
+    int speed = 100;
     char speedtitleint[512] = {0};
     char speedtxt[512] = { 0 };
     char* speedtitle;
@@ -171,16 +171,6 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
     strcat(dmtitleint, drunkmodetitle);
     char* dmtitle = dmtitleint;
 
-
-    if (speedfile) {
-        speed = read_file_as_float("/data/GoldHEN/RB4DX-1.08/plugin/speedmod.ini") * 100;
-    }
-
-    if (sys_sdk_proc_info(&procInfo) != 0) {
-        //emu: force song speed to 100% until file reads are fixed
-        speed = 100;
-    }
-
     //final_printf("songtitle: %s\n", thisMetadata->mTitle);
     //final_printf("apsongtitle: %s\n", aptitle);
 
@@ -190,9 +180,35 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
     else if (insong && drunkmode)
         //include " (DRUNK MODE)" at the end of the song title
         return dmtitle;
-    else if (insong && speed > 0 && speed != 100) {
+    else if (insong && songspeed > 0.00 && songspeed != 1.00) {
         // include " (x% Speed)" at the end of the song title
-        sprintf(speedtxt, " (%.0f%% Speed)", speed);
+        // manually convert speed % to string, since shad doesn't support sprintf
+        speed = (int)(songspeed * 100);
+        char temp[20];
+        int temp_num = speed;
+        int digit_count = 0;
+        int i;
+        // Count digits
+        if (temp_num == 0) {
+            digit_count = 1;
+        }
+        else {
+            while (temp_num > 0) {
+                temp_num /= 10;
+                digit_count++;
+            }
+        }
+        // Convert to string manually
+        temp[digit_count] = '\0';
+        for (i = digit_count - 1; i >= 0; i--) {
+            temp[i] = '0' + (speed % 10);
+            speed /= 10;
+        }
+
+        strcat(speedtxt, " (");
+        strcat(speedtxt, temp);
+        strcat(speedtxt, "% Speed)");
+        //sprintf(speedtxt, " (%.0f%% Speed)", songspeed);
         strcat(speedtitleint, speedtxt);
         speedtitle = speedtitleint;
         return speedtitle;
@@ -366,14 +382,16 @@ int32_t attr_public module_start(size_t argc, const void *args)
     GameRestart = (void*)(base_address + 0x0008b930);
     GetTitle = (void*)(base_address + 0x004035e0);
     SetMusicSpeed = (void*)(base_address + 0x0008c3c0);
+    RBMetaStateGoto = (void*)(base_address + 0x003163f0);
     //UpdateColors = (void*)(base_address + 0x00f94a70);
     //DoSetColor = (void*)(base_address + 0x001a7320);
 
     // apply all hooks
     InitDTAHooks();
     //InitAutoplayHooks();
-    //HOOK(GameRestart);
-    //HOOK(GetTitle);
+    HOOK(GameRestart);
+    HOOK(RBMetaStateGoto);
+    HOOK(GetTitle);
     HOOK(NewFile);
     //HOOK(UpdateColors);
     //HOOK(DoSetColor);
@@ -387,8 +405,9 @@ int32_t attr_public module_stop(size_t argc, const void *args)
     // unhook everything just in case
     DestroyDTAHooks();
     //DestroyAutoplayHooks();
-    //UNHOOK(GameRestart);
-    //UNHOOK(GetTitle);
+    UNHOOK(GameRestart);
+    UNHOOK(RBMetaStateGoto);
+    UNHOOK(GetTitle);
     UNHOOK(NewFile);
     //UNHOOK(UpdateColors);
     //UNHOOK(DoSetColor);
