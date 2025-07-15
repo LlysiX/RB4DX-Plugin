@@ -62,6 +62,45 @@ void DoNotification(const char *FMT, ...) {
     sceKernelSendNotificationRequest(0, &Buffer, sizeof(Buffer), 0);
 }
 
+void reverse(char str[], int length) {
+    int start = 0;
+    int end = length - 1;
+    while (start < end) {
+        char temp = str[start];
+        str[start] = str[end];
+        str[end] = temp;
+        start++;
+        end--;
+    }
+}
+
+void intToStr(int num, char str[]) {
+    int i = 0;
+    int isNegative = 0;
+
+    if (num == 0) {
+        str[i++] = '0';
+        str[i] = '\0';
+        return;
+    }
+
+    if (num < 0) {
+        isNegative = 1;
+        num = -num;
+    }
+
+    while (num != 0) {
+        str[i++] = (num % 10) + '0';
+        num = num / 10;
+    }
+
+    if (isNegative)
+        str[i++] = '-';
+
+    str[i] = '\0';
+    reverse(str, i);
+}
+
 bool USTitleID = true;
 
 // ARKless file loading hook
@@ -215,6 +254,67 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
     }
     else
         return thisMetadata->mTitle;
+}
+
+//artist hook for detailed song stats
+//void* thelocale;
+char* (*GetArtist)(SongMetadata*);
+//char* (*Localize)(Symbol, bool*, void*);
+const char* famousby = "As Made Famous By ";
+
+HOOK_INIT(GetArtist);
+
+char* GetArtist_hook(SongMetadata* thisMetadata) {
+    bool insong = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/insong.dta");
+    if (!insong)
+        return  thisMetadata->mArtist;
+    bool showartist = (!file_exists("/data/GoldHEN/RB4DX-1.08/settings/visuals/noartisttxt.dta"));
+    bool showcover = file_exists("/data/GoldHEN/RB4DX-1.08/settings/visuals/covertxt.dta");
+    bool showalbum = file_exists("/data/GoldHEN/RB4DX-1.08/settings/visuals/albumtxt.dta");
+    bool showyear = file_exists("/data/GoldHEN/RB4DX-1.08/settings/visuals/yeartxt.dta");
+    bool showgenre = file_exists("/data/GoldHEN/RB4DX-1.08/settings/visuals/genretxt.dta");
+    bool showorigin = file_exists("/data/GoldHEN/RB4DX-1.08/settings/visuals/origintxt.dta");
+    DataNode ret;
+    DataNode reta;
+    char year[4];
+    intToStr(thisMetadata->mAlbumYear, year);
+    char dtaexec[1024] = {0};
+
+    char detailedint[1024] = { 0 };
+    //famous by/cover
+    if (showcover && thisMetadata->mIsCoverRecording)
+        strcat(detailedint, famousby);
+
+    //artist
+    if (showartist)
+        strcat(detailedint, thisMetadata->mArtist);
+    
+    //album
+    if (showalbum && strcmp(thisMetadata->mAlbum, "") != 0) {
+        strcat(detailedint, "\n");
+        strcat(detailedint, thisMetadata->mAlbum);
+    }
+
+    if (showyear) {
+        strcat(detailedint, ", ");
+        strcat(detailedint, year);
+    }
+
+    //genre
+    if (showgenre) {
+        strcat(detailedint, "\n");
+        strcat(detailedint, thisMetadata->mGenre);
+    }
+
+    if (showorigin) {
+        if (!showgenre || !showalbum || strcmp(thisMetadata->mAlbum, "") == 0)
+            strcat(detailedint, "\n");
+        else
+            strcat(detailedint, " | ");
+        strcat(detailedint, thisMetadata->mGameOrigin);
+    }
+    char* detailed = detailedint;
+    return detailed;
 }
 
 // Custom gem colors from RBVREnhanced, updated to set gems individually instead of all at once
@@ -381,6 +481,9 @@ int32_t attr_public module_start(size_t argc, const void *args)
     NewFile = (void*)(base_address + 0x007acef0);
     GameRestart = (void*)(base_address + 0x0008b930);
     GetTitle = (void*)(base_address + 0x004035e0);
+    GetArtist = (void*)(base_address + 0x004035f0);
+    //Localize = (void*)(base_address + 0x007b9d30);
+    //thelocale = (void*)(base_address + 0x01c80390);
     SetMusicSpeed = (void*)(base_address + 0x0008c3c0);
     RBMetaStateGoto = (void*)(base_address + 0x003163f0);
     //UpdateColors = (void*)(base_address + 0x00f94a70);
@@ -392,6 +495,7 @@ int32_t attr_public module_start(size_t argc, const void *args)
     HOOK(GameRestart);
     HOOK(RBMetaStateGoto);
     HOOK(GetTitle);
+    HOOK(GetArtist);
     HOOK(NewFile);
     //HOOK(UpdateColors);
     //HOOK(DoSetColor);
@@ -408,6 +512,7 @@ int32_t attr_public module_stop(size_t argc, const void *args)
     UNHOOK(GameRestart);
     UNHOOK(RBMetaStateGoto);
     UNHOOK(GetTitle);
+    UNHOOK(GetArtist);
     UNHOOK(NewFile);
     //UNHOOK(UpdateColors);
     //UNHOOK(DoSetColor);
