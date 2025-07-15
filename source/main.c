@@ -274,11 +274,8 @@ char* GetArtist_hook(SongMetadata* thisMetadata) {
     bool showyear = file_exists("/data/GoldHEN/RB4DX-1.08/settings/visuals/yeartxt.dta");
     bool showgenre = file_exists("/data/GoldHEN/RB4DX-1.08/settings/visuals/genretxt.dta");
     bool showorigin = file_exists("/data/GoldHEN/RB4DX-1.08/settings/visuals/origintxt.dta");
-    DataNode ret;
-    DataNode reta;
     char year[4];
     intToStr(thisMetadata->mAlbumYear, year);
-    char dtaexec[1024] = {0};
 
     char detailedint[1024] = { 0 };
     //famous by/cover
