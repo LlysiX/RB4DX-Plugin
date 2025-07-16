@@ -144,6 +144,7 @@ void GameRestart_hook(void* thisGame, bool restart) {
 char* (*GetTitle)(SongMetadata*);
 const char* autoplaytitle = " (AUTOPLAY)";
 const char* drunkmodetitle = " (DRUNK MODE)";
+void(*RBMetaStateGoto)(void*, int);
 
 HOOK_INIT(GetTitle);
 
@@ -199,6 +200,74 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
     }
     else
         return thisMetadata->mTitle;
+}
+
+HOOK_INIT(RBMetaStateGoto);
+
+void RBMetaStateGoto_hook(void* thisMetaState, int state) {
+    HOOK_CONTINUE(RBMetaStateGoto, void (*)(void*, int), thisMetaState, state);
+    if (state != 3 && state != 44 && state != 9 && file_exists("/data/GoldHEN/RB4DX/insong.dta"))
+        remove("/data/GoldHEN/RB4DX/insong.dta");
+    return;
+}
+
+//artist hook for detailed song stats
+char* (*GetArtist)(SongMetadata*);
+const char* famousby = "As Made Famous By ";
+
+HOOK_INIT(GetArtist);
+
+char* GetArtist_hook(SongMetadata* thisMetadata) {
+    bool insong = file_exists("/data/GoldHEN/RB4DX/insong.dta");
+    if (!insong)
+        return  thisMetadata->mArtist;
+    bool showartist = (!file_exists("/data/GoldHEN/RB4DX/settings/visuals/noartisttxt.dta"));
+    bool showcover = file_exists("/data/GoldHEN/RB4DX/settings/visuals/covertxt.dta");
+    bool showalbum = file_exists("/data/GoldHEN/RB4DX/settings/visuals/albumtxt.dta");
+    bool showyear = file_exists("/data/GoldHEN/RB4DX/settings/visuals/yeartxt.dta");
+    bool showgenre = file_exists("/data/GoldHEN/RB4DX/settings/visuals/genretxt.dta");
+    bool showorigin = file_exists("/data/GoldHEN/RB4DX/settings/visuals/origintxt.dta");
+    bool fake = file_exists("/data/GoldHEN/RB4DX/fake.ini");
+    char year[4];
+    sprintf(year, "%d", thisMetadata->mAlbumYear);
+
+    char detailedint[1024] = { 0 };
+    //famous by/cover
+    if (showcover && thisMetadata->mIsCoverRecording)
+        strcat(detailedint, famousby);
+
+    //artist
+    if (showartist)
+        strcat(detailedint, thisMetadata->mArtist);
+
+    //album
+    if (showalbum && strcmp(thisMetadata->mAlbum, "") != 0) {
+        strcat(detailedint, "\n");
+        strcat(detailedint, thisMetadata->mAlbum);
+    }
+
+    if (showyear) {
+        strcat(detailedint, ", ");
+        strcat(detailedint, year);
+    }
+
+    //genre
+    if (showgenre) {
+        strcat(detailedint, "\n");
+        strcat(detailedint, thisMetadata->mGenre);
+    }
+
+    if (showorigin) {
+        if (!showgenre || !showalbum || strcmp(thisMetadata->mAlbum, "") == 0) {
+            strcat(detailedint, "\n");
+        }
+        else {
+            strcat(detailedint, " | ");
+        }
+        strcat(detailedint, thisMetadata->mGameOrigin);
+    }
+    char* detailed = detailedint;
+    return detailed;
 }
 
 //read lightbar status
@@ -380,6 +449,8 @@ int32_t attr_public module_start(size_t argc, const void *args)
     NewFile = (void*)(base_address + 0x00376d40);
     GameRestart = (void*)(base_address + 0x00a46710);
     GetTitle = (void*)(base_address + 0x00f28d20);
+    GetArtist = (void*)(base_address + 0x00f28d30);
+    RBMetaStateGoto = (void*)(base_address + 0x00bb5d40);
     SetMusicSpeed = (void*)(base_address + 0x00a470e0);
     TscePadSetLightBar = (void*)(base_address + 0x012450d0);
     UpdateColors = (void*)(base_address + 0x00f94a70);
@@ -390,6 +461,8 @@ int32_t attr_public module_start(size_t argc, const void *args)
     InitAutoplayHooks();
     HOOK(GameRestart);
     HOOK(GetTitle);
+    HOOK(GetArtist);
+    HOOK(RBMetaStateGoto);
     HOOK(NewFile);
     HOOK(TscePadSetLightBar);
     HOOK(UpdateColors);
@@ -406,6 +479,8 @@ int32_t attr_public module_stop(size_t argc, const void *args)
     DestroyAutoplayHooks();
     UNHOOK(GameRestart);
     UNHOOK(GetTitle);
+    UNHOOK(GetArtist);
+    UNHOOK(RBMetaStateGoto);
     UNHOOK(NewFile);
     UNHOOK(TscePadSetLightBar);
     UNHOOK(UpdateColors);
