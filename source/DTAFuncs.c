@@ -22,6 +22,7 @@ void(*DataInitFuncs)();
 void(*DataRegisterFunc)(Symbol, DataFunc);
 Symbol(*DataNodeForceSym)(DataNode*, DataArray*);
 float (*DataNodeFloat)(DataNode*, DataArray*);
+int (*DataNodeInt)(DataNode*, DataArray*);
 DataNode* (*DataExecuteString)(DataNode* __return_storage_ptr__, char* param_1);
 SystemOptions* options;
 
@@ -419,6 +420,27 @@ DataNode* DataIsEmulator(DataNode* ret, DataArray* args) {
     return ret;
 }
 
+DataNode* DataSetPluginVar(DataNode* ret, DataArray* args) {
+    DataNode _Arg1 = (args->mNodes->n[1]);
+    DataNode _Arg2 = (args->mNodes->n[2]);
+    Symbol Argsym = DataNodeForceSym(&_Arg1, args);
+    char* Arg1 = Argsym.sym;
+    int Arg2 = DataNodeInt(&_Arg2, args);
+    set_plugin_var(Arg1, Arg2);
+    ret->mType = kDataInt;
+    ret->mValue.value = 1;
+    return ret;
+}
+
+DataNode* DataGetPluginVar(DataNode* ret, DataArray* args) {
+    DataNode _Arg = (args->mNodes->n[1]);
+    Symbol Argsym = DataNodeForceSym(&_Arg, args);
+    char* Arg = Argsym.sym;
+    ret->mType = kDataInt;
+    ret->mValue.value = get_plugin_var(Arg);
+    return ret;
+}
+
 HOOK_INIT(DataInitFuncs);
 
 void DataInitFuncs_hook() {
@@ -484,8 +506,6 @@ void DataInitFuncs_hook() {
     Symbol_Ctor(&funcsym, "get_video_calibration");
     DataRegisterFunc(funcsym, GetVideoCalibration);
 
-
-
     // set calibration offset in dta in ms 
     Symbol_Ctor(&funcsym, "set_audio_calibration");
     DataRegisterFunc(funcsym, SetAudioCalibration);
@@ -496,6 +516,13 @@ void DataInitFuncs_hook() {
     //updated song speed functionality
     Symbol_Ctor(&funcsym, "set_song_speed");
     DataRegisterFunc(funcsym, SetSongSpeed);
+
+    //Plugin variables, accessible in C and DTA
+    Symbol_Ctor(&funcsym, "set_plugin_var");
+    DataRegisterFunc(funcsym, DataSetPluginVar);
+
+    Symbol_Ctor(&funcsym, "get_plugin_var");
+    DataRegisterFunc(funcsym, DataGetPluginVar);
 
     //add original dta functions
     HOOK_CONTINUE(DataInitFuncs, void (*)());
@@ -546,6 +573,7 @@ void InitDTAHooks() {
     DataRegisterFunc = (void*)(base_address + 0x006d25d0);
     DataNodeForceSym = (void*)(base_address + 0x006ed810);
     DataNodeFloat = (void*)(base_address + 0x00bef6a0);
+    DataNodeInt = (void*)(base_address + 0x00be8c50);
     Symbol_Ctor = (void*)(base_address + 0x00708d40);
     SystemOptionsLoad = (void*)(base_address + 0x00801e50);
     RBSystemOptionsSave = (void*)(base_address + 0x0046a760);

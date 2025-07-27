@@ -8,3 +8,14 @@ bool file_exists(const char*);
 float read_file_as_float(const char*);
 
 uint64_t get_base_address();
+
+typedef struct {
+    char name[50];
+    int value;
+} variable;
+
+extern variable variables[100];
+extern int num_vars;
+
+void set_plugin_var(const char*, int);
+int get_plugin_var(const char*);

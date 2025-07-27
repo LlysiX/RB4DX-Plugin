@@ -151,22 +151,17 @@ HOOK_INIT(GameRestart);
 
 void GameRestart_hook(void* thisGame, bool restart) {
     HOOK_CONTINUE(GameRestart, void (*)(void*, bool), thisGame, restart);
-    bool autoplay = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/autoplay.ini");
-    bool drunkmode = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/drunkmode.ini");
-    bool insong = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/insong.dta");
-    bool speedfile = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/speedmod.ini");
+    //bool autoplay = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/autoplay.ini");
+    //bool drunkmode = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/drunkmode.ini");
+    set_plugin_var("insong", 1);
 
     if (songspeed > 0.00 && songspeed != 1.00){
         SetMusicSpeed(thisGame, songspeed);
         final_printf("Music speed: %.2f\n", songspeed);
-        if (!insong || autoplay || drunkmode)
-            DoNotification("Music Speed Set: %.2f", songspeed);
     }
-    if (autoplay) {
-        final_printf("Autoplay Enabled!\n");
-        if (!insong)
-            DoNotificationStatic("Autoplay Enabled!");
-    }
+    //if (autoplay) {
+    //    final_printf("Autoplay Enabled!\n");
+    //}
     return;
 }
 
@@ -188,7 +183,7 @@ const char* drunkmodetitle = " (DRUNK MODE)";
 HOOK_INIT(GetTitle);
 
 char* GetTitle_hook(SongMetadata* thisMetadata) {
-    bool insong = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/insong.dta");
+    bool insong = (get_plugin_var("insong") != 0);
     if (!insong)
         return  thisMetadata->mTitle;
 
@@ -198,13 +193,13 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
     char* speedtitle;
     strcat(speedtitleint, thisMetadata->mTitle);
 
-    bool autoplay = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/autoplay.ini");
+    //bool autoplay = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/autoplay.ini");
     char aptitleint[512] = { 0 };
     strcat(aptitleint, thisMetadata->mTitle);
     strcat(aptitleint, autoplaytitle);
     char* aptitle = aptitleint;
 
-    bool drunkmode = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/drunkmode.ini");
+    //bool drunkmode = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/drunkmode.ini");
     char dmtitleint[512] = { 0 };
     strcat(dmtitleint, thisMetadata->mTitle);
     strcat(dmtitleint, drunkmodetitle);
@@ -213,13 +208,13 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
     //final_printf("songtitle: %s\n", thisMetadata->mTitle);
     //final_printf("apsongtitle: %s\n", aptitle);
 
-    if (insong && autoplay)
+    //if (insong && autoplay)
         //include " (AUTOPLAY)" at the end of the song title
-        return aptitle;
-    else if (insong && drunkmode)
+    //    return aptitle;
+    //else if (insong && drunkmode)
         //include " (DRUNK MODE)" at the end of the song title
-        return dmtitle;
-    else if (insong && songspeed > 0.00 && songspeed != 1.00) {
+    //    return dmtitle;
+    if (insong && songspeed > 0.00 && songspeed != 1.00) {
         // include " (x% Speed)" at the end of the song title
         // manually convert speed % to string, since shad doesn't support sprintf
         speed = (int)(songspeed * 100);
@@ -265,15 +260,17 @@ const char* famousby = "As Made Famous By ";
 HOOK_INIT(GetArtist);
 
 char* GetArtist_hook(SongMetadata* thisMetadata) {
-    bool insong = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/insong.dta");
+    bool insong = (get_plugin_var("insong") != 0);
     if (!insong)
         return  thisMetadata->mArtist;
-    bool showartist = (!file_exists("/data/GoldHEN/RB4DX-1.08/settings/visuals/noartisttxt.dta"));
-    bool showcover = file_exists("/data/GoldHEN/RB4DX-1.08/settings/visuals/covertxt.dta");
-    bool showalbum = file_exists("/data/GoldHEN/RB4DX-1.08/settings/visuals/albumtxt.dta");
-    bool showyear = file_exists("/data/GoldHEN/RB4DX-1.08/settings/visuals/yeartxt.dta");
-    bool showgenre = file_exists("/data/GoldHEN/RB4DX-1.08/settings/visuals/genretxt.dta");
-    bool showorigin = file_exists("/data/GoldHEN/RB4DX-1.08/settings/visuals/origintxt.dta");
+    bool showartist = (get_plugin_var("noartisttxt") == 0);
+    bool showcover = (get_plugin_var("covertxt") != 0);
+    bool showalbum = (get_plugin_var("albumtxt") != 0);
+    bool showyear = (get_plugin_var("yeartxt") != 0);
+    bool showgenre = (get_plugin_var("genretxt") != 0);
+    bool showorigin = (get_plugin_var("origintxt") != 0);
+    bool fake = false;
+
     char year[4];
     intToStr(thisMetadata->mAlbumYear, year);
 
