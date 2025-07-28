@@ -101,6 +101,7 @@ void intToStr(int num, char str[]) {
     reverse(str, i);
 }
 
+int updatecount = 99999;
 bool USTitleID = true;
 
 // ARKless file loading hook
@@ -154,6 +155,7 @@ void GameRestart_hook(void* thisGame, bool restart) {
     //bool autoplay = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/autoplay.ini");
     //bool drunkmode = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/drunkmode.ini");
     set_plugin_var("insong", 1);
+    updatecount = 99999;
 
     if (songspeed > 0.00 && songspeed != 1.00){
         SetMusicSpeed(thisGame, songspeed);
@@ -170,8 +172,10 @@ HOOK_INIT(RBMetaStateGoto);
 void RBMetaStateGoto_hook(void* thisMetaState, int state) {
     HOOK_CONTINUE(RBMetaStateGoto, void (*)(void*, int), thisMetaState, state);
     DataNode ret;
-    if (state != 3 && state != 44 && file_exists("/data/GoldHEN/RB4DX-1.08/plugin/insong.dta"))
-        DataExecuteString(&ret, "{dx_emu_file_delete 'plugin' 'insong.dta'}");
+    if (state != 3 && state != 44 && get_plugin_var("insong") != 0)
+        set_plugin_var("insong", 0);
+    if (state != 3 && state != 44)
+        DataExecuteString(&ret, "{write_file 'data:/GoldHEN/RB4DX-1.08/plugin/discordrp.json' {array (\"{\\qGame mode\\q:\\qdefaults\\q}\")}}");
     return;
 }
 
@@ -260,6 +264,7 @@ const char* famousby = "As Made Famous By ";
 HOOK_INIT(GetArtist);
 
 char* GetArtist_hook(SongMetadata* thisMetadata) {
+    DataNode ret;
     bool insong = (get_plugin_var("insong") != 0);
     if (!insong)
         return  thisMetadata->mArtist;
@@ -273,6 +278,45 @@ char* GetArtist_hook(SongMetadata* thisMetadata) {
 
     char year[4];
     intToStr(thisMetadata->mAlbumYear, year);
+
+    char rpexec[4096] = { 0 };
+    strcat(rpexec, "{write_file 'data:/GoldHEN/RB4DX-1.08/plugin/discordrp.json' {array (");
+
+    char richprescence[4096] = { 0 };
+    strcat(richprescence, "\"{\\qGame mode\\q:\\qqp_coop\\q,\\qLoaded Song\\q:\\q");
+
+    if (updatecount == 99999) {
+        updatecount = 0;
+
+        strcat(richprescence, thisMetadata->mTitle);
+        strcat(richprescence, " - ");
+        if (thisMetadata->mIsCoverRecording)
+            strcat(richprescence, famousby);
+        strcat(richprescence, thisMetadata->mArtist);
+        strcat(richprescence, ", ");
+        strcat(richprescence, year);
+        strcat(richprescence, "\\q,\\qSongname\\q:\\q");
+        strcat(richprescence, thisMetadata->mTitle);
+        strcat(richprescence, "\\q,\\qArtist\\q:\\q");
+        if (thisMetadata->mIsCoverRecording)
+            strcat(richprescence, famousby);
+        strcat(richprescence, thisMetadata->mArtist);
+        strcat(richprescence, "\\q,\\qYear\\q:\\q");
+        strcat(richprescence, year);
+        strcat(richprescence, "\\q,\\qAlbum\\q:\\q");
+        strcat(richprescence, thisMetadata->mAlbum);
+        strcat(richprescence, "\\q,\\qGenre\\q:\\q");
+        strcat(richprescence, thisMetadata->mGenre);
+        strcat(richprescence, "\\q,\\qSource\\q:\\q");
+        strcat(richprescence, thisMetadata->mGameOrigin);
+        strcat(richprescence, "\\q");
+        strcat(rpexec, richprescence);
+        strcat(rpexec, "}\")}}");
+
+        DataExecuteString(&ret, rpexec);
+    }
+    else
+        updatecount++;
 
     char detailedint[1024] = { 0 };
     //famous by/cover
