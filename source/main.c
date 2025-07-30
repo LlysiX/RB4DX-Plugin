@@ -22,6 +22,7 @@
 #include "plugin_common.h"
 #include "DTAFuncs.h"
 #include "Autoplay.h"
+#include "rb4/data.h"
 #include "rb4/songmetadata.h"
 #include "rb4/gemsmasher.h"
 
@@ -61,7 +62,9 @@ void DoNotification(const char *FMT, ...) {
     sceKernelSendNotificationRequest(0, &Buffer, sizeof(Buffer), 0);
 }
 
+int updatecount = 99999;
 bool USTitleID = true;
+DataNode* (*DataExecuteString)(DataNode* __return_storage_ptr__, char* param_1);
 
 // ARKless file loading hook
 const char* RawfilesFolder = "/data/GoldHEN/RB4DX/";
@@ -111,6 +114,9 @@ HOOK_INIT(GameRestart);
 
 void GameRestart_hook(void* thisGame, bool restart) {
     HOOK_CONTINUE(GameRestart, void (*)(void*, bool), thisGame, restart);
+    DataNode ret;
+    DataExecuteString(&ret, "{dx_write_null_file 'insong.ini'");
+    updatecount = 99999;
     float speed = 1.00;
     bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
     bool drunkmode = file_exists("/data/GoldHEN/RB4DX/drunkmode.ini");
@@ -206,8 +212,11 @@ HOOK_INIT(RBMetaStateGoto);
 
 void RBMetaStateGoto_hook(void* thisMetaState, int state) {
     HOOK_CONTINUE(RBMetaStateGoto, void (*)(void*, int), thisMetaState, state);
+    DataNode ret;
     if (state != 3 && state != 44 && state != 9 && file_exists("/data/GoldHEN/RB4DX/insong.dta"))
         remove("/data/GoldHEN/RB4DX/insong.dta");
+    if (state != 3 && state != 44 && state != 9)
+        DataExecuteString(&ret, "{write_file 'data:/GoldHEN/RB4DX/discordrp.json' {array (\"{\\qGame mode\\q:\\qdefaults\\q}\")}}");
     return;
 }
 
@@ -221,6 +230,8 @@ char* GetArtist_hook(SongMetadata* thisMetadata) {
     bool insong = file_exists("/data/GoldHEN/RB4DX/insong.dta");
     if (!insong)
         return  thisMetadata->mArtist;
+
+    DataNode ret;
     bool showartist = (!file_exists("/data/GoldHEN/RB4DX/settings/visuals/noartisttxt.dta"));
     bool showcover = file_exists("/data/GoldHEN/RB4DX/settings/visuals/covertxt.dta");
     bool showalbum = file_exists("/data/GoldHEN/RB4DX/settings/visuals/albumtxt.dta");
@@ -230,6 +241,45 @@ char* GetArtist_hook(SongMetadata* thisMetadata) {
     bool fake = file_exists("/data/GoldHEN/RB4DX/fake.ini");
     char year[4];
     sprintf(year, "%d", thisMetadata->mAlbumYear);
+
+    char rpexec[4096] = { 0 };
+    strcat(rpexec, "{write_file 'data:/GoldHEN/RB4DX/discordrp.json' {array (");
+
+    char richprescence[4096] = { 0 };
+    strcat(richprescence, "\"{\\qGame mode\\q:\\qqp_coop\\q,\\qLoaded Song\\q:\\q");
+
+    if (updatecount == 99999) {
+        updatecount = 0;
+
+        strcat(richprescence, thisMetadata->mTitle);
+        strcat(richprescence, " - ");
+        if (thisMetadata->mIsCoverRecording)
+            strcat(richprescence, famousby);
+        strcat(richprescence, thisMetadata->mArtist);
+        strcat(richprescence, ", ");
+        strcat(richprescence, year);
+        strcat(richprescence, "\\q,\\qSongname\\q:\\q");
+        strcat(richprescence, thisMetadata->mTitle);
+        strcat(richprescence, "\\q,\\qArtist\\q:\\q");
+        if (thisMetadata->mIsCoverRecording)
+            strcat(richprescence, famousby);
+        strcat(richprescence, thisMetadata->mArtist);
+        strcat(richprescence, "\\q,\\qYear\\q:\\q");
+        strcat(richprescence, year);
+        strcat(richprescence, "\\q,\\qAlbum\\q:\\q");
+        strcat(richprescence, thisMetadata->mAlbum);
+        strcat(richprescence, "\\q,\\qGenre\\q:\\q");
+        strcat(richprescence, thisMetadata->mGenre);
+        strcat(richprescence, "\\q,\\qSource\\q:\\q");
+        strcat(richprescence, thisMetadata->mGameOrigin);
+        strcat(richprescence, "\\q");
+        strcat(rpexec, richprescence);
+        strcat(rpexec, "}\")}}");
+
+        DataExecuteString(&ret, rpexec);
+    }
+    else
+        updatecount++;
 
     char detailedint[1024] = { 0 };
     //famous by/cover
@@ -455,6 +505,7 @@ int32_t attr_public module_start(size_t argc, const void *args)
     TscePadSetLightBar = (void*)(base_address + 0x012450d0);
     UpdateColors = (void*)(base_address + 0x00f94a70);
     DoSetColor = (void*)(base_address + 0x001a7320);
+    DataExecuteString = (void*)(base_address + 0x0021f0e0);
 
     // apply all hooks
     InitDTAHooks();
