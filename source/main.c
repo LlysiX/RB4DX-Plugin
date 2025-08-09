@@ -264,6 +264,7 @@ const char* famousby = "As Made Famous By ";
 HOOK_INIT(GetArtist);
 
 //convert double quotes to single quotes to prevent crashing when creating the discordrp.json file
+
 void fix_quotes(const char* input, char* output) {
     while (*input) {
         if (*input == '"') {
