@@ -263,6 +263,20 @@ const char* famousby = "As Made Famous By ";
 
 HOOK_INIT(GetArtist);
 
+//convert double quotes to single quotes to prevent crashing when creating the discordrp.json file
+void fix_quotes(const char* input, char* output) {
+    while (*input) {
+        if (*input == '"') {
+            *output++ = '\'';
+        }
+        else {
+            *output++ = *input;
+        }
+        input++;
+    }
+    *output = '\0';
+}
+
 char* GetArtist_hook(SongMetadata* thisMetadata) {
     DataNode ret;
     bool insong = (get_plugin_var("insong") != 0);
@@ -285,26 +299,33 @@ char* GetArtist_hook(SongMetadata* thisMetadata) {
     char richprescence[4096] = { 0 };
     strcat(richprescence, "\"{\\qGame mode\\q:\\qqp_coop\\q,\\qLoaded Song\\q:\\q");
 
+    char fixedtitle[512] = { 0 };
+    char fixedartist[512] = { 0 };
+    char fixedalbum[512] = { 0 };
+
     if (updatecount == 99999) {
         updatecount = 0;
 
-        strcat(richprescence, thisMetadata->mTitle);
+        fix_quotes(thisMetadata->mTitle, fixedtitle);
+        strcat(richprescence, fixedtitle);
         strcat(richprescence, " - ");
         if (thisMetadata->mIsCoverRecording)
             strcat(richprescence, famousby);
-        strcat(richprescence, thisMetadata->mArtist);
+        fix_quotes(thisMetadata->mArtist, fixedartist);
+        strcat(richprescence, fixedartist);
         strcat(richprescence, ", ");
         strcat(richprescence, year);
         strcat(richprescence, "\\q,\\qSongname\\q:\\q");
-        strcat(richprescence, thisMetadata->mTitle);
+        strcat(richprescence, fixedtitle);
         strcat(richprescence, "\\q,\\qArtist\\q:\\q");
         if (thisMetadata->mIsCoverRecording)
             strcat(richprescence, famousby);
-        strcat(richprescence, thisMetadata->mArtist);
+        strcat(richprescence, fixedartist);
         strcat(richprescence, "\\q,\\qYear\\q:\\q");
         strcat(richprescence, year);
         strcat(richprescence, "\\q,\\qAlbum\\q:\\q");
-        strcat(richprescence, thisMetadata->mAlbum);
+        fix_quotes(thisMetadata->mAlbum, fixedartist);
+        strcat(richprescence, fixedalbum);
         strcat(richprescence, "\\q,\\qGenre\\q:\\q");
         strcat(richprescence, thisMetadata->mGenre);
         strcat(richprescence, "\\q,\\qSource\\q:\\q");
