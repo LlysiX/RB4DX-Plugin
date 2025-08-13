@@ -236,6 +236,54 @@ DataNode* SetVideoCalibration(DataNode* ret, DataArray* args) {
     return ret;
 }
 
+typedef union _FloatInt {
+    float f;
+    unsigned int i;
+} FloatInt;
+
+uint32_t swap_endian(uint32_t value) {
+    return ((value >> 24) & 0x000000FF) | // Move byte 3 to position 0
+        ((value >> 8) & 0x0000FF00) | // Move byte 2 to position 1
+        ((value << 8) & 0x00FF0000) | // Move byte 1 to position 2
+        ((value << 24) & 0xFF000000); // Move byte 0 to position 3
+}
+
+DataNode* DataFloatToInt(DataNode* ret, DataArray* args) {
+    DataNode _Arg = *(args->mNodes + 1);
+    float Argfloat = DataNodeFloat(&_Arg, args);
+    FloatInt convert;
+    convert.f = Argfloat;
+    ret->mType = kDataInt;
+    ret->mValue.value = swap_endian(convert.i);
+    return ret;
+}
+
+
+DataNode* DataWriteBinaryFile(DataNode* ret, DataArray* args) {
+    DataNode _firstArg = *(args->mNodes + 1);
+    Symbol firstArgsym = DataNodeForceSym(&_firstArg, args);
+    char* firstArg = firstArgsym.sym;
+    DataNode _secondArg = *(args->mNodes + 2);
+    Symbol secondArgsym = DataNodeForceSym(&_secondArg, args);
+    char* secondArg = secondArgsym.sym;
+
+    FILE* binaryfile = fopen(firstArg, "w");
+
+    char* p;
+    for(p = secondArg; *p != '\0'; ) {
+        unsigned int x;
+        int n;
+        if(sscanf(p, "%2x%n", &x, &n) != 1) break;
+        putc(x, binaryfile);
+        p += n;
+    }
+    fclose(binaryfile);
+
+    ret->mType = kDataInt;
+    ret->mValue.value = 1;
+    return ret;
+}
+
 HOOK_INIT(DataInitFuncs);
 
 void DataInitFuncs_hook() {
@@ -267,6 +315,14 @@ void DataInitFuncs_hook() {
     // DX: write_file using "/data/GoldHEN/RB4DX/" as root path (always creates blank file)
     Symbol_Ctor(&funcsym, "dx_write_null_file");
     DataRegisterFunc(funcsym, DxWriteNullFile);
+
+    // Float to Hex
+    Symbol_Ctor(&funcsym, "float_to_int");
+    DataRegisterFunc(funcsym, DataFloatToInt);
+
+    // Write binary file from string of hex characters
+    Symbol_Ctor(&funcsym, "write_binary_file");
+    DataRegisterFunc(funcsym, DataWriteBinaryFile);
 
     // get calibration offset in dta in ms
     Symbol_Ctor(&funcsym, "get_audio_calibration");
