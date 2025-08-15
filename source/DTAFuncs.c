@@ -294,6 +294,7 @@ DataNode* DataWriteScoreFile(DataNode* ret, DataArray* args) {
     FloatInt thirdArg;
     thirdArg.f = DataNodeFloat(&_thirdArg, args);
 
+    // No Mic Warning
     DataNode _fourthArg = *(args->mNodes + 4);
     int fourthArg = DataNodeInt(&_fourthArg, args);
 
@@ -375,14 +376,14 @@ DataNode* DataWriteMTVFile(DataNode* ret, DataArray* args) {
     int fourthArg = DataNodeInt(&_fourthArg, args);
 
     //always on
-    DataNode _fifthArg = *(args->mNodes + 4);
+    DataNode _fifthArg = *(args->mNodes + 5);
     int fifthArg = DataNodeInt(&_fifthArg, args);
 
     firstArg2.f = firstArg.f + 3.04834747314453;
     if (fourthArg == 0)
-        thirdArg2.f = thirdArg2.f - 38.2138786;
+        thirdArg2.f = thirdArg.f - 38.2138786;
     else
-        thirdArg2.f = thirdArg2.f - 54.13119125366216;
+        thirdArg2.f = thirdArg.f - 65.21386337280316;
 
     char filedata[38171] = { 0 };
     if (fifthArg == 0)
