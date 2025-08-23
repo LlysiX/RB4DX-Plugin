@@ -360,7 +360,7 @@ DataNode* DataWriteMTVFile(DataNode* ret, DataArray* args) {
     replace_floats(mtv_file_path, 0x631, posa, 3);
     replace_floats(mtv_file_path, 0x821, posb, 3);
     
-    FILE* binaryfile = fopen(mtv_file_path, "w");
+    FILE* binaryfile = fopen(mtv_file_path, "rb+");
     fseek(binaryfile, 0xc64, SEEK_SET);
     if (fifthArg == 0)
         fputc('o', binaryfile);
