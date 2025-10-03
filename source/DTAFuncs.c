@@ -272,6 +272,7 @@ const char* score_file_path = "/data/GoldHEN/RB4DX/ps4/ui/game/hud.scene_ps4";
 const char* countdown_file_path = "/data/GoldHEN/RB4DX/ps4/ui/game/break_countdown.entity_ps4";
 const char* solo_file_path = "/data/GoldHEN/RB4DX/ps4/ui/game/solo_percentage.entity_ps4";
 const char* mtv_file_path = "/data/GoldHEN/RB4DX/ps4/ui/game/song_artist_overlay.entity_ps4";
+const char* practice_speed_file_path = "/data/GoldHEN/RB4DX/ps4/dx/track/practice_speed.dta_dta_ps4";
 
 DataNode* DataWriteScoreFile(DataNode* ret, DataArray* args) {
     DataNode _firstArg = *(args->mNodes + 1);
@@ -397,6 +398,17 @@ DataNode* DataWriteSoloFile(DataNode* ret, DataArray* args) {
     return ret;
 }
 
+DataNode* DataSetPracticeSpeed(DataNode* ret, DataArray* args) {
+    DataNode _firstArg = *(args->mNodes + 1);
+    float firstArg = DataNodeFloat(&_firstArg, args);
+
+    replace_floats(practice_speed_file_path, 0x39, &firstArg, 1);
+
+    ret->mType = kDataInt;
+    ret->mValue.value = 1;
+    return ret;
+}
+
 DataNode* DataWriteBinaryFile(DataNode* ret, DataArray* args) {
     DataNode _firstArg = *(args->mNodes + 1);
     Symbol firstArgsym = DataNodeForceSym(&_firstArg, args);
@@ -502,6 +514,9 @@ void DataInitFuncs_hook() {
     // Write MTV file
     Symbol_Ctor(&funcsym, "write_mtv_file");
     DataRegisterFunc(funcsym, DataWriteMTVFile);
+    // Set Practice Speed
+    Symbol_Ctor(&funcsym, "set_practice_speed");
+    DataRegisterFunc(funcsym, DataSetPracticeSpeed);
 
     // get calibration offset in dta in ms
     Symbol_Ctor(&funcsym, "get_audio_calibration");
@@ -509,8 +524,6 @@ void DataInitFuncs_hook() {
 
     Symbol_Ctor(&funcsym, "get_video_calibration");
     DataRegisterFunc(funcsym, GetVideoCalibration);
-
-
 
     // set calibration offset in dta in ms 
     Symbol_Ctor(&funcsym, "set_audio_calibration");
