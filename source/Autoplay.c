@@ -22,6 +22,9 @@ HOOK_INIT(SetGameOver);
 
 void SetGameOver_hook(void* thisGame,  bool won) {
 
+    FILE* fptr = fopen("/data/GoldHEN/RB4DX/dontmodifyartist.ini", "w");
+    fclose(fptr);
+
     if (file_exists("/data/GoldHEN/RB4DX/saving.ini")) {
         //for some reason checking if a file exists will make saving work
         HOOK_CONTINUE(SetGameOver, void (*)(void*, bool), thisGame, won);

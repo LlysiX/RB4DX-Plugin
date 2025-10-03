@@ -62,7 +62,7 @@ void DoNotification(const char *FMT, ...) {
     sceKernelSendNotificationRequest(0, &Buffer, sizeof(Buffer), 0);
 }
 
-int updatecount = 99999;
+bool refreshrp = false;
 bool USTitleID = true;
 DataNode* (*DataExecuteString)(DataNode* __return_storage_ptr__, char* param_1);
 
@@ -116,7 +116,8 @@ void GameRestart_hook(void* thisGame, bool restart) {
     HOOK_CONTINUE(GameRestart, void (*)(void*, bool), thisGame, restart);
     DataNode ret;
     DataExecuteString(&ret, "{dx_write_null_file 'insong.ini'");
-    updatecount = 99999;
+    refreshrp = true;
+    remove("/data/GoldHEN/RB4DX/dontmodifyartist.ini");
     float speed = 1.00;
     bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
     bool drunkmode = file_exists("/data/GoldHEN/RB4DX/drunkmode.ini");
@@ -243,8 +244,12 @@ void fix_quotes(const char* input, char* output) {
 
 char* GetArtist_hook(SongMetadata* thisMetadata) {
     bool insong = file_exists("/data/GoldHEN/RB4DX/insong.dta");
+    bool dontmodifyartist = file_exists("/data/GoldHEN/RB4DX/dontmodifyartist.ini");
     if (!insong)
-        return  thisMetadata->mArtist;
+        return thisMetadata->mArtist;
+    
+    if (dontmodifyartist)
+        return thisMetadata->mArtist;
 
     DataNode ret;
     bool showartist = (!file_exists("/data/GoldHEN/RB4DX/settings/visuals/noartisttxt.dta"));
@@ -254,7 +259,7 @@ char* GetArtist_hook(SongMetadata* thisMetadata) {
     bool showgenre = file_exists("/data/GoldHEN/RB4DX/settings/visuals/genretxt.dta");
     bool showorigin = file_exists("/data/GoldHEN/RB4DX/settings/visuals/origintxt.dta");
     bool fake = file_exists("/data/GoldHEN/RB4DX/fake.ini");
-    char year[4];
+    char year[4] = { 0 };
     sprintf(year, "%d", thisMetadata->mAlbumYear);
 
     char rpexec[4096] = { 0 };
@@ -267,8 +272,8 @@ char* GetArtist_hook(SongMetadata* thisMetadata) {
     char fixedartist[512] = { 0 };
     char fixedalbum[512] = { 0 };
 
-    if (updatecount == 99999) {
-        updatecount = 0;
+    if (refreshrp) {
+        refreshrp = false;
 
         fix_quotes(thisMetadata->mTitle, fixedtitle);
         strcat(richprescence, fixedtitle);
@@ -300,8 +305,6 @@ char* GetArtist_hook(SongMetadata* thisMetadata) {
 
         DataExecuteString(&ret, rpexec);
     }
-    else
-        updatecount++;
 
     char detailedint[1024] = { 0 };
     //famous by/cover
@@ -376,7 +379,7 @@ bool UpdateColors_hook(RBGemSmasherCom* thiscom) {
     //final_printf("G: %f\n", thiscom->mColor.g);
     //final_printf("B: %f\n", thiscom->mColor.b);
 
-    char coltest[9];
+    char coltest[9] = { 0 };
     sprintf(coltest, "%f", thiscom->mColor.r);
 
     //green
