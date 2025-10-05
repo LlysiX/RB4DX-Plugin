@@ -15,6 +15,57 @@
 #include <orbis/Sysmodule.h>
 #include "plugin_common.h"
 #include "rb4/data.h"
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
+
+int cp(const char* to, const char* from)
+{
+    int fd_to, fd_from;
+    char buf[4096] = { 0 };
+    ssize_t nread;
+    int saved_errno;
+
+    fd_from = open(from, O_RDONLY);
+    if (fd_from < 0)
+        return -1;
+
+    fd_to = open(to, O_WRONLY | O_CREAT | O_EXCL, 0666);
+    if (fd_to < 0)
+        goto out_error;
+
+    while (nread = read(fd_from, buf, sizeof buf), nread > 0)
+    {
+        char* out_ptr = buf;
+        ssize_t nwritten;
+
+        do {
+            nwritten = write(fd_to, out_ptr, nread);
+
+            if (nwritten >= 0)
+            {
+                nread -= nwritten;
+                out_ptr += nwritten;
+            }
+        } while (nread > 0);
+    }
+
+    if (nread == 0)
+    {
+        if (close(fd_to) < 0)
+        {
+            fd_to = -1;
+            goto out_error;
+        }
+        close(fd_from);
+
+        /* Success! */
+        return 0;
+    }
+
+out_error:
+    return -1;
+}
 
 const char* DXFolder = "/data/GoldHEN/RB4DX-1.08/";
 Symbol(*Symbol_Ctor)(Symbol*, const char*);
@@ -154,21 +205,7 @@ DataNode* DataFileCopy(DataNode* ret, DataArray* args) {
     Symbol secondArgsym = DataNodeForceSym(&_secondArg, args);
     char* secondArg = secondArgsym.sym;
     if (file_exists(firstArg)) {
-        if (sys_sdk_proc_info(&procInfo) != 0) {
-            // syscall failed, probably shadPS4
-            sceKernelRename(firstArg, secondArg); // rename syscall currently acts as copy in emu
-        }
-        else {
-            size_t bytesRead;
-            char buffer[4096];
-            FILE* iptr = fopen(firstArg, "r");
-            FILE* optr = fopen(secondArg, "w");
-            while ((bytesRead = fread(buffer, 1, sizeof(buffer), iptr)) > 0) {
-                fwrite(buffer, 1, bytesRead, optr);
-            }
-            fclose(iptr);
-            fclose(optr);
-        }
+        cp(secondArg, firstArg);
         final_printf("from %s\n", firstArg);
         final_printf("to %s\n", secondArg);
     }
@@ -209,21 +246,7 @@ DataNode* DxFileCopy(DataNode* ret, DataArray* args) {
     strcat(__secondArg, secondArgsym.sym);
     char* secondArg = __secondArg;
     if (file_exists(firstArg)) {
-        if (sys_sdk_proc_info(&procInfo) != 0) {
-            // syscall failed, probably shadPS4
-            sceKernelRename(firstArg, secondArg); // rename syscall currently acts as copy in emu
-        }
-        else {
-            size_t bytesRead;
-            char buffer[4096];
-            FILE* iptr = fopen(firstArg, "r");
-            FILE* optr = fopen(secondArg, "w");
-            while ((bytesRead = fread(buffer, 1, sizeof(buffer), iptr)) > 0) {
-                fwrite(buffer, 1, bytesRead, optr);
-            }
-            fclose(iptr);
-            fclose(optr);
-        }
+        cp(secondArg, firstArg);
         final_printf("from %s\n", firstArg);
         final_printf("to %s\n", secondArg);
     }
