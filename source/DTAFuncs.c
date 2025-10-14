@@ -140,7 +140,7 @@ DataNode* DxFileDelete(DataNode* ret, DataArray* args) {
     strcat(__Arg, DXFolder);
     strcat(__Arg, Argsym.sym);
     char* Arg = __Arg;
-    remove(Arg);
+    sceKernelUnlink(Arg);
     ret->mType = kDataInt;
     ret->mValue.value = 1;
     return ret;
@@ -583,7 +583,7 @@ void RBSystemOptionsSave_hook(void* thisoptions, void* binstream) {
     
     // delete force override files when this is called
     if (file_exists("/data/GoldHEN/RB4DX-1.08/plugin/calibration.ini")) {
-        remove("/data/GoldHEN/RB4DX-1.08/plugin/calibration.ini");
+        sceKernelUnlink("/data/GoldHEN/RB4DX-1.08/plugin/calibration.ini");
         DataExecuteString(&ret, "{dx_emu_file_delete 'plugin' 'calibration.ini'}");
     }
     return;
