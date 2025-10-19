@@ -533,6 +533,8 @@ int32_t attr_public module_start(size_t argc, const void *args)
     final_printf("Applying RB4DX hooks...\n");
     DoNotificationStatic("RB4DX Plugin loaded!");
 
+    set_plugin_var("speedmod", 100);
+
     NewFile = (void*)(base_address + 0x007acef0);
     GameRestart = (void*)(base_address + 0x0008b930);
     GetTitle = (void*)(base_address + 0x004035e0);
