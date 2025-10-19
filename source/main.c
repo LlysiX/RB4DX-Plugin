@@ -101,7 +101,7 @@ void intToStr(int num, char str[]) {
     reverse(str, i);
 }
 
-int updatecount = 99999;
+bool refreshrp = false;
 bool USTitleID = true;
 
 // ARKless file loading hook
@@ -143,7 +143,6 @@ void NewFile_hook(const char* path, FileMode mode) {
 
 //speed hack
 
-float songspeed = 1.00;
 void(*GameRestart)(void*, bool);
 void(*SetMusicSpeed)(void*, float);
 void(*RBMetaStateGoto)(void*, int);
@@ -155,15 +154,14 @@ void GameRestart_hook(void* thisGame, bool restart) {
     //bool autoplay = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/autoplay.ini");
     //bool drunkmode = file_exists("/data/GoldHEN/RB4DX-1.08/plugin/drunkmode.ini");
     set_plugin_var("insong", 1);
-    updatecount = 99999;
+    refreshrp = true;
+    int speedmod = get_plugin_var("speedmod");
+    float songspeed = (float)speedmod / 100;
 
     if (songspeed > 0.00 && songspeed != 1.00){
         SetMusicSpeed(thisGame, songspeed);
         final_printf("Music speed: %.2f\n", songspeed);
     }
-    //if (autoplay) {
-    //    final_printf("Autoplay Enabled!\n");
-    //}
     return;
 }
 
@@ -191,7 +189,7 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
     if (!insong)
         return  thisMetadata->mTitle;
 
-    int speed = 100;
+    int speed = get_plugin_var("speedmod");
     char speedtitleint[512] = {0};
     char speedtxt[512] = { 0 };
     char* speedtitle;
@@ -218,10 +216,9 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
     //else if (insong && drunkmode)
         //include " (DRUNK MODE)" at the end of the song title
     //    return dmtitle;
-    if (insong && songspeed > 0.00 && songspeed != 1.00) {
+    if (insong && speed > 0 && speed != 100) {
         // include " (x% Speed)" at the end of the song title
         // manually convert speed % to string, since shad doesn't support sprintf
-        speed = (int)(songspeed * 100);
         char temp[20];
         int temp_num = speed;
         int digit_count = 0;
@@ -304,8 +301,8 @@ char* GetArtist_hook(SongMetadata* thisMetadata) {
     char fixedartist[512] = { 0 };
     char fixedalbum[512] = { 0 };
 
-    if (updatecount == 99999) {
-        updatecount = 0;
+    if (refreshrp) {
+        refreshrp = false;
 
         fix_quotes(thisMetadata->mTitle, fixedtitle);
         strcat(richprescence, fixedtitle);
@@ -337,12 +334,10 @@ char* GetArtist_hook(SongMetadata* thisMetadata) {
 
         DataExecuteString(&ret, rpexec);
     }
-    else
-        updatecount++;
 
     char detailedint[1024] = { 0 };
     //famous by/cover
-    if (showcover && thisMetadata->mIsCoverRecording)
+    if (showartist && showcover && thisMetadata->mIsCoverRecording)
         strcat(detailedint, famousby);
 
     //artist

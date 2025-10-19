@@ -296,15 +296,6 @@ DataNode* SetVideoCalibration(DataNode* ret, DataArray* args) {
     return ret;
 }
 
-DataNode* SetSongSpeed(DataNode* ret, DataArray* args) {
-    DataNode _Arg = (args->mNodes->n[1]);
-    float Argfloat = DataNodeFloat(&_Arg, args);
-    songspeed = Argfloat;
-    ret->mType = kDataInt;
-    ret->mValue.value = 1;
-    return ret;
-}
-
 #ifndef FILESYSTEM_PREFIX_LEN
 #define FILESYSTEM_PREFIX_LEN(f) 0
 #endif
@@ -535,10 +526,6 @@ void DataInitFuncs_hook() {
 
     Symbol_Ctor(&funcsym, "set_video_calibration");
     DataRegisterFunc(funcsym, SetVideoCalibration);
-
-    //updated song speed functionality
-    Symbol_Ctor(&funcsym, "set_song_speed");
-    DataRegisterFunc(funcsym, SetSongSpeed);
 
     //Plugin variables, accessible in C and DTA
     Symbol_Ctor(&funcsym, "set_plugin_var");

@@ -88,5 +88,4 @@ extern int (*DataNodeInt)(DataNode*, DataArray*);
 extern DataNode* (*DataExecuteString)(DataNode* __return_storage_ptr__, char* param_1);
 extern Symbol(*DataNodeForceSym)(DataNode*, DataArray*);
 extern Symbol(*Symbol_Ctor)(Symbol*, const char*);
-extern float songspeed;
 
