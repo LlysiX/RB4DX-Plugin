@@ -25,6 +25,7 @@
 #include "rb4/data.h"
 #include "rb4/songmetadata.h"
 #include "rb4/gemsmasher.h"
+#include "shadps4_assist.h"
 
 attr_public const char *g_pluginName = PLUGIN_NAME;
 attr_public const char *g_pluginDesc = "Plugin for loading Rock Band 4 Deluxe files, among other enhancements.";
@@ -543,6 +544,11 @@ int32_t attr_public module_start(size_t argc, const void *args)
     HOOK(TscePadSetLightBar);
     HOOK(UpdateColors);
     HOOK(DoSetColor);
+
+    // apply hooks for shadPS4
+    if (sys_sdk_proc_info(&procInfo) != 0) {
+        InitShadHooks();
+    }
 
     return 0;
 }
