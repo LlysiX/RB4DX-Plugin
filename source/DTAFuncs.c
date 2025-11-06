@@ -14,6 +14,57 @@
 #include <orbis/Sysmodule.h>
 #include "plugin_common.h"
 #include "rb4/data.h"
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
+
+int cp(const char* to, const char* from)
+{
+    int fd_to, fd_from;
+    char buf[4096] = { 0 };
+    ssize_t nread;
+    int saved_errno;
+
+    fd_from = open(from, O_RDONLY);
+    if (fd_from < 0)
+        return -1;
+
+    fd_to = open(to, O_WRONLY | O_CREAT | O_EXCL, 0666);
+    if (fd_to < 0)
+        goto out_error;
+
+    while (nread = read(fd_from, buf, sizeof buf), nread > 0)
+    {
+        char* out_ptr = buf;
+        ssize_t nwritten;
+
+        do {
+            nwritten = write(fd_to, out_ptr, nread);
+
+            if (nwritten >= 0)
+            {
+                nread -= nwritten;
+                out_ptr += nwritten;
+            }
+        } while (nread > 0);
+    }
+
+    if (nread == 0)
+    {
+        if (close(fd_to) < 0)
+        {
+            fd_to = -1;
+            goto out_error;
+        }
+        close(fd_from);
+
+        /* Success! */
+        return 0;
+    }
+
+out_error:
+    return -1;
+}
 
 const char* DXFolder = "/data/GoldHEN/RB4DX/";
 Symbol(*Symbol_Ctor)(Symbol*, const char*);
@@ -27,13 +78,13 @@ SystemOptions* options;
 
 DataNode* DataFileRename(DataNode* ret, DataArray* args) {
     final_printf("renaming file!\n");
-    DataNode _firstArg = *(args->mNodes + 1);
+    DataNode _firstArg = (args->mNodes->n[1]);
     Symbol firstArgsym = DataNodeForceSym(&_firstArg, args);
     char* firstArg = firstArgsym.sym;
-    DataNode _secondArg = *(args->mNodes + 2);
+    DataNode _secondArg = (args->mNodes->n[2]);
     Symbol secondArgsym = DataNodeForceSym(&_secondArg, args);
     char* secondArg = secondArgsym.sym;
-    rename(firstArg, secondArg);
+    sceKernelRename(firstArg, secondArg);
     final_printf("from %s\n", firstArg);
     final_printf("to %s\n", secondArg);
     //final_printf("type: %x\n", firstArg.mType);
@@ -45,22 +96,22 @@ DataNode* DataFileRename(DataNode* ret, DataArray* args) {
 DataNode* DxFileRename(DataNode* ret, DataArray* args) {
     final_printf("renaming file!\n");
     // set up first arg
-    char __firstArg[2048];
-    DataNode _firstArg = *(args->mNodes + 1);
+    char __firstArg[2048] = { 0 };
+    DataNode _firstArg = (args->mNodes->n[1]);
     Symbol firstArgsym = DataNodeForceSym(&_firstArg, args);
-    strcpy(__firstArg, DXFolder);
+    strcat(__firstArg, DXFolder);
     strcat(__firstArg, firstArgsym.sym);
     char* firstArg = __firstArg;
 
     // set up second arg
-    char __secondArg[2048];
-    DataNode _secondArg = *(args->mNodes + 2);
+    char __secondArg[2048] = { 0 };
+    DataNode _secondArg = (args->mNodes->n[2]);
     Symbol secondArgsym = DataNodeForceSym(&_secondArg, args);
-    strcpy(__secondArg, DXFolder);
+    strcat(__secondArg, DXFolder);
     strcat(__secondArg, secondArgsym.sym);
     char* secondArg = __secondArg;
 
-    rename(firstArg, secondArg);
+    sceKernelRename(firstArg, secondArg);
     final_printf("from %s\n", firstArg);
     final_printf("to %s\n", secondArg);
     //final_printf("type: %x\n", firstArg.mType);
@@ -70,10 +121,10 @@ DataNode* DxFileRename(DataNode* ret, DataArray* args) {
 }
 
 DataNode* DxFileExists(DataNode* ret, DataArray* args) {
-    char __Arg[2048];
-    DataNode _Arg = *(args->mNodes + 1);
+    char __Arg[2048] = { 0 };
+    DataNode _Arg = (args->mNodes->n[1]);
     Symbol Argsym = DataNodeForceSym(&_Arg, args);
-    strcpy(__Arg, DXFolder);
+    strcat(__Arg, DXFolder);
     strcat(__Arg, Argsym.sym);
     char* Arg = __Arg;
     ret->mType = kDataInt;
@@ -82,40 +133,63 @@ DataNode* DxFileExists(DataNode* ret, DataArray* args) {
 }
 
 DataNode* DxFileDelete(DataNode* ret, DataArray* args) {
-    char __Arg[2048];
-    DataNode _Arg = *(args->mNodes + 1);
+    char __Arg[2048] = { 0 };
+    DataNode _Arg = (args->mNodes->n[1]);
     Symbol Argsym = DataNodeForceSym(&_Arg, args);
-    strcpy(__Arg, DXFolder);
+    strcat(__Arg, DXFolder);
     strcat(__Arg, Argsym.sym);
     char* Arg = __Arg;
-    remove(Arg);
+    sceKernelUnlink(Arg);
     ret->mType = kDataInt;
     ret->mValue.value = 1;
     return ret;
 }
 
 DataNode* DxFileMkdir(DataNode* ret, DataArray* args) {
-    char __Arg[2048];
-    DataNode _Arg = *(args->mNodes + 1);
+    char __Arg[2048] = { 0 };
+    DataNode _Arg = (args->mNodes->n[1]);
     Symbol Argsym = DataNodeForceSym(&_Arg, args);
-    strcpy(__Arg, DXFolder);
+    strcat(__Arg, DXFolder);
     strcat(__Arg, Argsym.sym);
     char* Arg = __Arg;
-    mkdir(Arg, 0777);
+    sceKernelMkdir(Arg, 0777);
+    ret->mType = kDataInt;
+    ret->mValue.value = 1;
+    return ret;
+}
+
+DataNode* FileRmdir(DataNode* ret, DataArray* args) {
+    DataNode _Arg = (args->mNodes->n[1]);
+    Symbol Argsym = DataNodeForceSym(&_Arg, args);
+    char* Arg = Argsym.sym;
+    sceKernelRmdir(Arg);
+    ret->mType = kDataInt;
+    ret->mValue.value = 1;
+    return ret;
+}
+
+DataNode* DxFileRmdir(DataNode* ret, DataArray* args) {
+    char __Arg[2048] = { 0 };
+    DataNode _Arg = (args->mNodes->n[1]);
+    Symbol Argsym = DataNodeForceSym(&_Arg, args);
+    strcat(__Arg, DXFolder);
+    strcat(__Arg, Argsym.sym);
+    char* Arg = __Arg;
+    sceKernelRmdir(Arg);
     ret->mType = kDataInt;
     ret->mValue.value = 1;
     return ret;
 }
 
 DataNode* DxWriteNullFile(DataNode* ret, DataArray* args) {
-    char __Arg[2048];
-    DataNode _Arg = *(args->mNodes + 1);
+    char __Arg[2048] = { 0 };
+    DataNode _Arg = (args->mNodes->n[1]);
     Symbol Argsym = DataNodeForceSym(&_Arg, args);
-    strcpy(__Arg, DXFolder);
+    strcat(__Arg, DXFolder);
     strcat(__Arg, Argsym.sym);
     char* Arg = __Arg;
-    FILE* fptr = fopen(Arg, "w");
-    fclose(fptr);
+    int file = open(Arg, O_CREAT, 0777);
+    close(file);
     ret->mType = kDataInt;
     ret->mValue.value = 1;
     return ret;
@@ -123,22 +197,14 @@ DataNode* DxWriteNullFile(DataNode* ret, DataArray* args) {
 
 DataNode* DataFileCopy(DataNode* ret, DataArray* args) {
     final_printf("Copying file!\n");
-    DataNode _firstArg = *(args->mNodes + 1);
+    DataNode _firstArg = (args->mNodes->n[1]);
     Symbol firstArgsym = DataNodeForceSym(&_firstArg, args);
     char* firstArg = firstArgsym.sym;
-    DataNode _secondArg = *(args->mNodes + 2);
+    DataNode _secondArg = (args->mNodes->n[2]);
     Symbol secondArgsym = DataNodeForceSym(&_secondArg, args);
     char* secondArg = secondArgsym.sym;
     if (file_exists(firstArg)) {
-        size_t bytesRead;
-        char buffer[4096];
-        FILE* iptr = fopen(firstArg, "r");
-        FILE* optr = fopen(secondArg, "w");
-        while ((bytesRead = fread(buffer, 1, sizeof(buffer), iptr)) > 0) {
-            fwrite(buffer, 1, bytesRead, optr);
-        }
-        fclose(iptr);
-        fclose(optr);
+        cp(secondArg, firstArg);
         final_printf("from %s\n", firstArg);
         final_printf("to %s\n", secondArg);
     }
@@ -150,10 +216,10 @@ DataNode* DataFileCopy(DataNode* ret, DataArray* args) {
 DataNode* DxFileCopy(DataNode* ret, DataArray* args) {
     final_printf("Copying file!\n");
     // set up first arg
-    char __firstArg[2048];
-    DataNode _firstArg = *(args->mNodes + 1);
+    char __firstArg[2048] = { 0 };
+    DataNode _firstArg = (args->mNodes->n[1]);
     Symbol firstArgsym = DataNodeForceSym(&_firstArg, args);
-    strcpy(__firstArg, DXFolder);
+    strcat(__firstArg, DXFolder);
     strcat(__firstArg, firstArgsym.sym);
     for (int i = 0, j; __firstArg[i] != '\0'; ++i) { // fix sprinted files with spaces (TODO: repeat this in the other funcs)
 
@@ -172,22 +238,14 @@ DataNode* DxFileCopy(DataNode* ret, DataArray* args) {
     char* firstArg = __firstArg;
 
     // set up second arg
-    char __secondArg[2048];
-    DataNode _secondArg = *(args->mNodes + 2);
+    char __secondArg[2048] = { 0 };
+    DataNode _secondArg = (args->mNodes->n[2]);
     Symbol secondArgsym = DataNodeForceSym(&_secondArg, args);
-    strcpy(__secondArg, DXFolder);
+    strcat(__secondArg, DXFolder);
     strcat(__secondArg, secondArgsym.sym);
     char* secondArg = __secondArg;
     if (file_exists(firstArg)) {
-        size_t bytesRead;
-        char buffer[4096];
-        FILE* iptr = fopen(firstArg, "r");
-        FILE* optr = fopen(secondArg, "w");
-        while ((bytesRead = fread(buffer, 1, sizeof(buffer), iptr)) > 0) {
-            fwrite(buffer, 1, bytesRead, optr);
-        }
-        fclose(iptr);
-        fclose(optr);
+        cp(secondArg, firstArg);
         final_printf("from %s\n", firstArg);
         final_printf("to %s\n", secondArg);
     }
@@ -216,7 +274,7 @@ DataNode* GetVideoCalibration(DataNode* ret, DataArray* args) {
 // set calibration offset in dta in ms 
 
 DataNode* SetAudioCalibration(DataNode* ret, DataArray* args) {
-    DataNode _Arg = *(args->mNodes + 1);
+    DataNode _Arg = (args->mNodes->n[1]);
     float Argfloat = DataNodeFloat(&_Arg, args);
     if (options != NULL) {
         options->mAudioOffset = Argfloat;
@@ -227,13 +285,32 @@ DataNode* SetAudioCalibration(DataNode* ret, DataArray* args) {
 }
 
 DataNode* SetVideoCalibration(DataNode* ret, DataArray* args) {
-    DataNode _Arg = *(args->mNodes + 1);
+    DataNode _Arg = (args->mNodes->n[1]);
     float Argfloat = DataNodeFloat(&_Arg, args);
     if (options != NULL) {
         options->mVideoOffset = Argfloat;
     }
     ret->mType = kDataInt;
     ret->mValue.value = 1;
+    return ret;
+}
+
+DataNode* DxForceSym(DataNode* ret, DataArray* args) {
+    DataNode _Arg = (args->mNodes->n[1]);
+    Symbol Arg = DataNodeForceSym(&_Arg, args);
+    ret->mType = kDataSymbol;
+    ret->mValue.symbol = Arg.sym;
+    return ret;
+}
+
+DataNode* DataIsEmulator(DataNode* ret, DataArray* args) {
+    ret->mType = kDataInt;
+    if (sys_sdk_proc_info(&procInfo) != 0) {
+        ret->mValue.value = 1;
+    }
+    else {
+        ret->mValue.value = 0;
+    }
     return ret;
 }
 
@@ -250,7 +327,7 @@ uint32_t swap_endian(uint32_t value) {
 }
 
 DataNode* DataFloatToInt(DataNode* ret, DataArray* args) {
-    DataNode _Arg = *(args->mNodes + 1);
+    DataNode _Arg = (args->mNodes->n[1]);
     float Argfloat = DataNodeFloat(&_Arg, args);
     FloatInt convert;
     convert.f = Argfloat;
@@ -261,10 +338,10 @@ DataNode* DataFloatToInt(DataNode* ret, DataArray* args) {
 
 // replace floats, used in HUD files for positioning
 void replace_floats(const char* filename, long offset, const float* values, size_t count) {
-    FILE* fp = fopen(filename, "rb+");
-    fseek(fp, offset, SEEK_SET);
-    fwrite(values, sizeof(float), count, fp);
-    fclose(fp);
+    int fp = open(filename, O_RDWR);
+    lseek(fp, offset, SEEK_SET);
+    write(fp, values, sizeof(float) * count);
+    close(fp);
     return;
 }
 
@@ -275,33 +352,35 @@ const char* mtv_file_path = "/data/GoldHEN/RB4DX/ps4/ui/game/song_artist_overlay
 const char* practice_speed_file_path = "/data/GoldHEN/RB4DX/ps4/dx/track/practice_speed.dta_dta_ps4";
 
 DataNode* DataWriteScoreFile(DataNode* ret, DataArray* args) {
-    DataNode _firstArg = *(args->mNodes + 1);
+    DataNode _firstArg = (args->mNodes->n[1]);
     float firstArg;
     firstArg = DataNodeFloat(&_firstArg, args);
 
-    DataNode _secondArg = *(args->mNodes + 2);
+    DataNode _secondArg = (args->mNodes->n[2]);
     float secondArg;
     secondArg = DataNodeFloat(&_secondArg, args);
 
-    DataNode _thirdArg = *(args->mNodes + 3);
+    DataNode _thirdArg = (args->mNodes->n[3]);
     float thirdArg;
     thirdArg = DataNodeFloat(&_thirdArg, args);
 
     // No Mic Warning
-    DataNode _fourthArg = *(args->mNodes + 4);
+    DataNode _fourthArg = (args->mNodes->n[4]);
     int fourthArg = DataNodeInt(&_fourthArg, args);
 
     float pos[3] = { firstArg, secondArg, thirdArg };
 
     replace_floats(score_file_path, 0x31a3, pos, 3);
 
-    FILE* binaryfile = fopen(score_file_path, "rb+");
-    fseek(binaryfile, 0x1ec7a, SEEK_SET);
+    int binaryfile = open(score_file_path, O_RDWR);
+    char byte;
+    lseek(binaryfile, 0x1ec7a, SEEK_SET);
     if (fourthArg == 0)
-        fputc('i', binaryfile);
+        byte = 'i';
     else
-        fputc('n', binaryfile);
-    fclose(binaryfile);
+        byte = 'n';
+    write(binaryfile, &byte, 1);
+    close(binaryfile);
 
     ret->mType = kDataInt;
     ret->mValue.value = 1;
@@ -309,14 +388,14 @@ DataNode* DataWriteScoreFile(DataNode* ret, DataArray* args) {
 }
 
 DataNode* DataWriteCountdownFile(DataNode* ret, DataArray* args) {
-    DataNode _firstArg = *(args->mNodes + 1);
+    DataNode _firstArg = (args->mNodes->n[1]);
     float firstArg = DataNodeFloat(&_firstArg, args);
 
-    DataNode _secondArg = *(args->mNodes + 2);
+    DataNode _secondArg = (args->mNodes->n[2]);
     float secondArg = DataNodeFloat(&_secondArg, args);
     float secondArg2 = secondArg + 10;
 
-    DataNode _thirdArg = *(args->mNodes + 3);
+    DataNode _thirdArg = (args->mNodes->n[3]);
     float thirdArg = DataNodeFloat(&_thirdArg, args);
 
     float posa[3] = { firstArg, secondArg2, thirdArg };
@@ -331,23 +410,23 @@ DataNode* DataWriteCountdownFile(DataNode* ret, DataArray* args) {
 }
 
 DataNode* DataWriteMTVFile(DataNode* ret, DataArray* args) {
-    DataNode _firstArg = *(args->mNodes + 1);
+    DataNode _firstArg = (args->mNodes->n[1]);
     float firstArg = DataNodeFloat(&_firstArg, args);
     float firstArg2 = firstArg + 3.04834747314453;
 
-    DataNode _secondArg = *(args->mNodes + 2);
+    DataNode _secondArg = (args->mNodes->n[2]);
     float secondArg = DataNodeFloat(&_secondArg, args);
 
-    DataNode _thirdArg = *(args->mNodes + 3);
+    DataNode _thirdArg = (args->mNodes->n[3]);
     float thirdArg = DataNodeFloat(&_thirdArg, args);
     float thirdArg2;
 
     //detailed
-    DataNode _fourthArg = *(args->mNodes + 4);
+    DataNode _fourthArg = (args->mNodes->n[4]);
     int fourthArg = DataNodeInt(&_fourthArg, args);
 
     //always on
-    DataNode _fifthArg = *(args->mNodes + 5);
+    DataNode _fifthArg = (args->mNodes->n[5]);
     int fifthArg = DataNodeInt(&_fifthArg, args);
 
     if (fourthArg == 0)
@@ -361,18 +440,21 @@ DataNode* DataWriteMTVFile(DataNode* ret, DataArray* args) {
     replace_floats(mtv_file_path, 0x631, posa, 3);
     replace_floats(mtv_file_path, 0x821, posb, 3);
     
-    FILE* binaryfile = fopen(mtv_file_path, "rb+");
-    fseek(binaryfile, 0xc64, SEEK_SET);
+    int binaryfile = open(mtv_file_path, O_RDWR);
+    char byte;
+    lseek(binaryfile, 0xc64, SEEK_SET);
     if (fifthArg == 0)
-        fputc('o', binaryfile);
+        byte = 'o';
     else
-        fputc('n', binaryfile);
-    fseek(binaryfile, 0xce6, SEEK_SET);
+        byte = 'n';
+    write(binaryfile, &byte, 1);
+    lseek(binaryfile, 0xce6, SEEK_SET);
     if (fifthArg == 0)
-        fputc('i', binaryfile);
+        byte = 'i';
     else
-        fputc('n', binaryfile);
-    fclose(binaryfile);
+        byte = 'n';
+    write(binaryfile, &byte, 1);
+    close(binaryfile);
 
     ret->mType = kDataInt;
     ret->mValue.value = 1;
@@ -380,13 +462,13 @@ DataNode* DataWriteMTVFile(DataNode* ret, DataArray* args) {
 }
 
 DataNode* DataWriteSoloFile(DataNode* ret, DataArray* args) {
-    DataNode _firstArg = *(args->mNodes + 1);
+    DataNode _firstArg = (args->mNodes->n[1]);
     float firstArg = DataNodeFloat(&_firstArg, args);
 
-    DataNode _secondArg = *(args->mNodes + 2);
+    DataNode _secondArg = (args->mNodes->n[2]);
     float secondArg = DataNodeFloat(&_secondArg, args);
 
-    DataNode _thirdArg = *(args->mNodes + 3);
+    DataNode _thirdArg = (args->mNodes->n[3]);
     float thirdArg = DataNodeFloat(&_thirdArg, args);
 
     float pos[3] = { firstArg, secondArg, thirdArg };
@@ -399,7 +481,7 @@ DataNode* DataWriteSoloFile(DataNode* ret, DataArray* args) {
 }
 
 DataNode* DataSetPracticeSpeed(DataNode* ret, DataArray* args) {
-    DataNode _firstArg = *(args->mNodes + 1);
+    DataNode _firstArg = (args->mNodes->n[1]);
     float firstArg = DataNodeFloat(&_firstArg, args);
 
     replace_floats(practice_speed_file_path, 0x39, &firstArg, 1);
@@ -410,10 +492,10 @@ DataNode* DataSetPracticeSpeed(DataNode* ret, DataArray* args) {
 }
 
 DataNode* DataWriteBinaryFile(DataNode* ret, DataArray* args) {
-    DataNode _firstArg = *(args->mNodes + 1);
+    DataNode _firstArg = (args->mNodes->n[1]);
     Symbol firstArgsym = DataNodeForceSym(&_firstArg, args);
     char* firstArg = firstArgsym.sym;
-    DataNode _secondArg = *(args->mNodes + 2);
+    DataNode _secondArg = (args->mNodes->n[2]);
     Symbol secondArgsym = DataNodeForceSym(&_secondArg, args);
     char* secondArg = secondArgsym.sym;
 
@@ -435,7 +517,7 @@ DataNode* DataWriteBinaryFile(DataNode* ret, DataArray* args) {
 }
 
 DataNode* DataReadFileAsFloat(DataNode* ret, DataArray* args) {
-    DataNode _Arg = *(args->mNodes + 1);
+    DataNode _Arg = (args->mNodes->n[1]);
     Symbol Argsym = DataNodeForceSym(&_Arg, args);
     char* Arg = Argsym.sym;
     ret->mType = kDataFloat;
@@ -445,7 +527,7 @@ DataNode* DataReadFileAsFloat(DataNode* ret, DataArray* args) {
 
 DataNode* DxReadFileAsFloat(DataNode* ret, DataArray* args) {
     char __Arg[2048];
-    DataNode _Arg = *(args->mNodes + 1);
+    DataNode _Arg = (args->mNodes->n[1]);
     Symbol Argsym = DataNodeForceSym(&_Arg, args);
     strcpy(__Arg, DXFolder);
     strcat(__Arg, Argsym.sym);
@@ -483,9 +565,21 @@ void DataInitFuncs_hook() {
     // DX: file_mkdir using "/data/GoldHEN/RB4DX/" as root path
     Symbol_Ctor(&funcsym, "dx_file_mkdir");
     DataRegisterFunc(funcsym, DxFileMkdir);
+    // Delete Directory
+    Symbol_Ctor(&funcsym, "file_rmdir");
+    DataRegisterFunc(funcsym, FileRmdir);
+    // DX: file_rmdir using "/data/GoldHEN/RB4DX/" as root path
+    Symbol_Ctor(&funcsym, "dx_file_rmdir");
+    DataRegisterFunc(funcsym, DxFileRmdir);
     // DX: write_file using "/data/GoldHEN/RB4DX/" as root path (always creates blank file)
     Symbol_Ctor(&funcsym, "dx_write_null_file");
     DataRegisterFunc(funcsym, DxWriteNullFile);
+    // Allow DataForceSym to be called from DTA
+    Symbol_Ctor(&funcsym, "force_sym");
+    DataRegisterFunc(funcsym, DxForceSym);
+    // Emulation check
+    Symbol_Ctor(&funcsym, "is_emu");
+    DataRegisterFunc(funcsym, DataIsEmulator);
 
     // Float to Hex
     Symbol_Ctor(&funcsym, "float_to_int");
@@ -567,10 +661,10 @@ void RBSystemOptionsSave_hook(void* thisoptions, void* binstream) {
     //DoNotificationa("Audio Offset Set: %.0f", thisoptions->mAudioOffset);
     // delete force override files when this is called
     if (file_exists("/data/GoldHEN/RB4DX/videocalib.ini")) {
-        remove("/data/GoldHEN/RB4DX/videocalib.ini");
+        sceKernelUnlink("/data/GoldHEN/RB4DX/videocalib.ini");
     }
     if (file_exists("/data/GoldHEN/RB4DX/audiocalib.ini")) {
-        remove("/data/GoldHEN/RB4DX/audiocalib.ini");
+        sceKernelUnlink("/data/GoldHEN/RB4DX/audiocalib.ini");
     }
     return;
 }

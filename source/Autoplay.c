@@ -12,6 +12,8 @@
 #include <orbis/libkernel.h>
 #include <orbis/Sysmodule.h>
 #include "plugin_common.h"
+#include <fcntl.h>
+#include <unistd.h>
 
 static struct proc_info procInfo;
 
@@ -22,8 +24,8 @@ HOOK_INIT(SetGameOver);
 
 void SetGameOver_hook(void* thisGame,  bool won) {
 
-    FILE* fptr = fopen("/data/GoldHEN/RB4DX/dontmodifyartist.ini", "w");
-    fclose(fptr);
+    int file = open("/data/GoldHEN/RB4DX/dontmodifyartist.ini", O_CREAT, 0777);
+    close(file);
 
     if (file_exists("/data/GoldHEN/RB4DX/saving.ini")) {
         //for some reason checking if a file exists will make saving work

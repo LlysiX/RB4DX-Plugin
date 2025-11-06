@@ -52,8 +52,13 @@ typedef struct _DataNode {
     DataType mType;
 } DataNode;
 
+typedef struct _DataNodes
+{
+    DataNode n[1];
+} DataNodes;
+
 typedef struct _DataArray {
-    DataNode* mNodes;
+    DataNodes* mNodes;
     Symbol mFile;
     int mRefs;
     short mSize;

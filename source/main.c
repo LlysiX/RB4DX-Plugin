@@ -117,7 +117,7 @@ void GameRestart_hook(void* thisGame, bool restart) {
     DataNode ret;
     DataExecuteString(&ret, "{dx_write_null_file 'insong.ini'");
     refreshrp = true;
-    remove("/data/GoldHEN/RB4DX/dontmodifyartist.ini");
+    sceKernelUnlink("/data/GoldHEN/RB4DX/dontmodifyartist.ini");
     float speed = 1.00;
     bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
     bool drunkmode = file_exists("/data/GoldHEN/RB4DX/drunkmode.ini");
@@ -126,11 +126,6 @@ void GameRestart_hook(void* thisGame, bool restart) {
 
     if (speedfile) {
         speed = read_file_as_float("/data/GoldHEN/RB4DX/speedmod.ini");
-    }
-
-    if (sys_sdk_proc_info(&procInfo) != 0) {
-        //emu: force song speed to 100% until file reads are fixed
-        speed = 1.00;
     }
 
     if (speed > 0.00 && speed != 1.00){
@@ -184,11 +179,6 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
         speed = read_file_as_float("/data/GoldHEN/RB4DX/speedmod.ini") * 100;
     }
 
-    if (sys_sdk_proc_info(&procInfo) != 0) {
-        //emu: force song speed to 100% until file reads are fixed
-        speed = 100;
-    }
-
     //final_printf("songtitle: %s\n", thisMetadata->mTitle);
     //final_printf("apsongtitle: %s\n", aptitle);
 
@@ -215,7 +205,7 @@ void RBMetaStateGoto_hook(void* thisMetaState, int state) {
     HOOK_CONTINUE(RBMetaStateGoto, void (*)(void*, int), thisMetaState, state);
     DataNode ret;
     if (state != 3 && state != 44 && state != 9 && file_exists("/data/GoldHEN/RB4DX/insong.dta"))
-        remove("/data/GoldHEN/RB4DX/insong.dta");
+        sceKernelUnlink("/data/GoldHEN/RB4DX/insong.dta");
     if (state != 3 && state != 44 && state != 9)
         DataExecuteString(&ret, "{write_file 'data:/GoldHEN/RB4DX/discordrp.json' {array (\"{\\qGame mode\\q:\\qdefaults\\q}\")}}");
     return;
