@@ -115,7 +115,7 @@ HOOK_INIT(GameRestart);
 void GameRestart_hook(void* thisGame, bool restart) {
     HOOK_CONTINUE(GameRestart, void (*)(void*, bool), thisGame, restart);
     DataNode ret;
-    DataExecuteString(&ret, "{dx_write_null_file 'insong.ini'");
+    DataExecuteString(&ret, "{dx_write_null_file 'insong.dta'");
     refreshrp = true;
     sceKernelUnlink("/data/GoldHEN/RB4DX/dontmodifyartist.ini");
     float speed = 1.00;
