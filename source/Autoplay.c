@@ -24,8 +24,7 @@ HOOK_INIT(SetGameOver);
 
 void SetGameOver_hook(void* thisGame,  bool won) {
 
-    int file = open("/data/GoldHEN/RB4DX/dontmodifyartist.ini", O_CREAT, 0777);
-    close(file);
+    set_plugin_var("dontmodifyartist", 1);
 
     if (file_exists("/data/GoldHEN/RB4DX/saving.ini")) {
         //for some reason checking if a file exists will make saving work
@@ -42,7 +41,7 @@ void(*SetCheating)(void*, bool);
 HOOK_INIT(SetCheating);
 
 void SetCheating_hook(void* thisTrackWatcher, bool cheating) {
-    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
+    bool autoplay = (get_plugin_var("autoplay") != 0);
 
     HOOK_CONTINUE(SetCheating, void (*)(void*, bool), thisTrackWatcher, autoplay);
     return;
@@ -54,7 +53,7 @@ void(*SetAutoplay)(void*, bool);
 HOOK_INIT(RBVocalPlayerRestart);
 
 void RBVocalPlayerRestart_hook(void* thisRBVocalPlayer, float time, void* song) {
-    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
+    bool autoplay = (get_plugin_var("autoplay") != 0);
 
     SetAutoplay(thisRBVocalPlayer, autoplay);
 

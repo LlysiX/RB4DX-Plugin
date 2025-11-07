@@ -63,3 +63,29 @@ float read_file_as_float(const char* filename) {
     close(fd);
     return out;
 }
+
+variable variables[100];
+int num_vars = 0;
+
+void set_plugin_var(const char* name, int value) {
+    // Check if the variable already exists
+    for (int i = 0; i < num_vars; i++) {
+        if (strcmp(variables[i].name, name) == 0) {
+            variables[i].value = value;
+            return;
+        }
+    }
+    // Create new variable if it doesn't
+    strcpy(variables[num_vars].name, name);
+    variables[num_vars].value = value;
+    num_vars++;
+}
+
+int get_plugin_var(const char* name) {
+    for (int i = 0; i < num_vars; i++) {
+        if (strcmp(variables[i].name, name) == 0) {
+            return variables[i].value;
+        }
+    }
+    return 0; // Not found, return 0
+}

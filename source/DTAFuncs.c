@@ -537,6 +537,27 @@ DataNode* DxReadFileAsFloat(DataNode* ret, DataArray* args) {
     return ret;
 }
 
+DataNode* DataSetPluginVar(DataNode* ret, DataArray* args) {
+    DataNode _Arg1 = (args->mNodes->n[1]);
+    DataNode _Arg2 = (args->mNodes->n[2]);
+    Symbol Argsym = DataNodeForceSym(&_Arg1, args);
+    char* Arg1 = Argsym.sym;
+    int Arg2 = DataNodeInt(&_Arg2, args);
+    set_plugin_var(Arg1, Arg2);
+    ret->mType = kDataInt;
+    ret->mValue.value = 1;
+    return ret;
+}
+
+DataNode* DataGetPluginVar(DataNode* ret, DataArray* args) {
+    DataNode _Arg = (args->mNodes->n[1]);
+    Symbol Argsym = DataNodeForceSym(&_Arg, args);
+    char* Arg = Argsym.sym;
+    ret->mType = kDataInt;
+    ret->mValue.value = get_plugin_var(Arg);
+    return ret;
+}
+
 HOOK_INIT(DataInitFuncs);
 
 void DataInitFuncs_hook() {
@@ -625,6 +646,13 @@ void DataInitFuncs_hook() {
 
     Symbol_Ctor(&funcsym, "set_video_calibration");
     DataRegisterFunc(funcsym, SetVideoCalibration);
+
+    //Plugin variables, accessible in C and DTA
+    Symbol_Ctor(&funcsym, "set_plugin_var");
+    DataRegisterFunc(funcsym, DataSetPluginVar);
+
+    Symbol_Ctor(&funcsym, "get_plugin_var");
+    DataRegisterFunc(funcsym, DataGetPluginVar);
 
     //add original dta functions
     HOOK_CONTINUE(DataInitFuncs, void (*)());

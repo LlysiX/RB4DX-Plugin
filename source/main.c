@@ -114,14 +114,12 @@ HOOK_INIT(GameRestart);
 
 void GameRestart_hook(void* thisGame, bool restart) {
     HOOK_CONTINUE(GameRestart, void (*)(void*, bool), thisGame, restart);
-    DataNode ret;
-    DataExecuteString(&ret, "{dx_write_null_file 'insong.dta'");
+    set_plugin_var("insong", 1);
     refreshrp = true;
-    sceKernelUnlink("/data/GoldHEN/RB4DX/dontmodifyartist.ini");
+    set_plugin_var("dontmodifyartist", 0);
     float speed = 1.00;
-    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
-    bool drunkmode = file_exists("/data/GoldHEN/RB4DX/drunkmode.ini");
-    bool insong = file_exists("/data/GoldHEN/RB4DX/insong.dta");
+    bool autoplay = (get_plugin_var("autoplay") != 0);
+    bool drunkmode = (get_plugin_var("drunkmode") != 0);
     bool speedfile = file_exists("/data/GoldHEN/RB4DX/speedmod.ini");
 
     if (speedfile) {
@@ -131,13 +129,11 @@ void GameRestart_hook(void* thisGame, bool restart) {
     if (speed > 0.00 && speed != 1.00){
         SetMusicSpeed(thisGame, speed);
         final_printf("Music speed: %.2f\n", speed);
-        if (!insong || autoplay || drunkmode)
+        if (autoplay || drunkmode)
             DoNotification("Music Speed Set: %.2f", speed);
     }
     if (autoplay) {
         final_printf("Autoplay Enabled!\n");
-        if (!insong)
-            DoNotificationStatic("Autoplay Enabled!");
     }
     return;
 }
@@ -151,7 +147,7 @@ void(*RBMetaStateGoto)(void*, int);
 HOOK_INIT(GetTitle);
 
 char* GetTitle_hook(SongMetadata* thisMetadata) {
-    bool insong = file_exists("/data/GoldHEN/RB4DX/insong.dta");
+    bool insong = (get_plugin_var("insong") != 0);
     if (!insong)
         return  thisMetadata->mTitle;
 
@@ -162,13 +158,13 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
     char* speedtitle;
     strcat(speedtitleint, thisMetadata->mTitle);
 
-    bool autoplay = file_exists("/data/GoldHEN/RB4DX/autoplay.ini");
+    bool autoplay = (get_plugin_var("autoplay") != 0);
     char aptitleint[512] = { 0 };
     strcat(aptitleint, thisMetadata->mTitle);
     strcat(aptitleint, autoplaytitle);
     char* aptitle = aptitleint;
 
-    bool drunkmode = file_exists("/data/GoldHEN/RB4DX/drunkmode.ini");
+    bool drunkmode = (get_plugin_var("drunkmode") != 0);
     char dmtitleint[512] = { 0 };
     strcat(dmtitleint, thisMetadata->mTitle);
     strcat(dmtitleint, drunkmodetitle);
@@ -204,8 +200,8 @@ HOOK_INIT(RBMetaStateGoto);
 void RBMetaStateGoto_hook(void* thisMetaState, int state) {
     HOOK_CONTINUE(RBMetaStateGoto, void (*)(void*, int), thisMetaState, state);
     DataNode ret;
-    if (state != 3 && state != 44 && state != 9 && file_exists("/data/GoldHEN/RB4DX/insong.dta"))
-        sceKernelUnlink("/data/GoldHEN/RB4DX/insong.dta");
+    if (state != 3 && state != 44 && state != 9 && get_plugin_var("insong") != 0)
+        set_plugin_var("insong", 0);
     if (state != 3 && state != 44 && state != 9)
         DataExecuteString(&ret, "{write_file 'data:/GoldHEN/RB4DX/discordrp.json' {array (\"{\\qGame mode\\q:\\qdefaults\\q}\")}}");
     return;
@@ -233,8 +229,8 @@ void fix_quotes(const char* input, char* output) {
 }
 
 char* GetArtist_hook(SongMetadata* thisMetadata) {
-    bool insong = file_exists("/data/GoldHEN/RB4DX/insong.dta");
-    bool dontmodifyartist = file_exists("/data/GoldHEN/RB4DX/dontmodifyartist.ini");
+    bool insong = (get_plugin_var("insong") != 0);
+    bool dontmodifyartist = (get_plugin_var("dontmodifyartist") != 0);
     if (!insong)
         return thisMetadata->mArtist;
     
@@ -242,13 +238,13 @@ char* GetArtist_hook(SongMetadata* thisMetadata) {
         return thisMetadata->mArtist;
 
     DataNode ret;
-    bool showartist = (!file_exists("/data/GoldHEN/RB4DX/settings/visuals/noartisttxt.dta"));
-    bool showcover = file_exists("/data/GoldHEN/RB4DX/settings/visuals/covertxt.dta");
-    bool showalbum = file_exists("/data/GoldHEN/RB4DX/settings/visuals/albumtxt.dta");
-    bool showyear = file_exists("/data/GoldHEN/RB4DX/settings/visuals/yeartxt.dta");
-    bool showgenre = file_exists("/data/GoldHEN/RB4DX/settings/visuals/genretxt.dta");
-    bool showorigin = file_exists("/data/GoldHEN/RB4DX/settings/visuals/origintxt.dta");
-    bool fake = file_exists("/data/GoldHEN/RB4DX/fake.ini");
+    bool showartist = (get_plugin_var("noartisttxt") == 0);
+    bool showcover = (get_plugin_var("covertxt") != 0);
+    bool showalbum = (get_plugin_var("albumtxt") != 0);
+    bool showyear = (get_plugin_var("yeartxt") != 0);
+    bool showgenre = (get_plugin_var("genretxt") != 0);
+    bool showorigin = (get_plugin_var("origintxt") != 0);
+    bool fake = false;
     char year[4] = { 0 };
     sprintf(year, "%d", thisMetadata->mAlbumYear);
 
@@ -416,7 +412,7 @@ bool (*DoSetColor)(void* component, void* proppath, void* propinfo, Color* color
 HOOK_INIT(DoSetColor);
 
 bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* color, Color* toset, bool param_6) {
-    bool insong = file_exists("/data/GoldHEN/RB4DX/insong.dta");
+    bool insong = (get_plugin_var("insong") != 0);
     bool enabled = file_exists("/data/GoldHEN/RB4DX/settings/theme/gem/colors/enabled.dta");
     if (!enabled || !insong)
         return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, toset, param_6);
