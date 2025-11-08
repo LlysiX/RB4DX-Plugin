@@ -305,7 +305,7 @@ DataNode* DxForceSym(DataNode* ret, DataArray* args) {
 
 DataNode* DataIsEmulator(DataNode* ret, DataArray* args) {
     ret->mType = kDataInt;
-    if (sys_sdk_proc_info(&procInfo) != 0) {
+    if (is_emu) {
         ret->mValue.value = 1;
     }
     else {

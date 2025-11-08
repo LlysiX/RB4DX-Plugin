@@ -64,6 +64,7 @@ void DoNotification(const char *FMT, ...) {
 
 bool refreshrp = false;
 bool USTitleID = true;
+bool is_emu = false;
 DataNode* (*DataExecuteString)(DataNode* __return_storage_ptr__, char* param_1);
 
 // ARKless file loading hook
@@ -331,20 +332,20 @@ char* GetArtist_hook(SongMetadata* thisMetadata) {
     return detailed;
 }
 
-//read lightbar status
+//read lightbar status (unused)
 
-int(*TscePadSetLightBar)(int handle, OrbisPadColor *inputColor);
+//int(*TscePadSetLightBar)(int handle, OrbisPadColor *inputColor);
 
-HOOK_INIT(TscePadSetLightBar);
+//HOOK_INIT(TscePadSetLightBar);
 
-void TscePadSetLightBar_hook(int handle, OrbisPadColor *inputColor) {
+//void TscePadSetLightBar_hook(int handle, OrbisPadColor *inputColor) {
     //final_printf("Set Light Bar Color:\n"); //disabled due to log spam
     //final_printf("R: %d\n", inputColor->r);
     //final_printf("G: %d\n", inputColor->g);
     //final_printf("B: %d\n", inputColor->b);
-    scePadSetLightBar(handle, inputColor);
-    return;
-}
+//    scePadSetLightBar(handle, inputColor);
+//    return;
+//}
 
 // Custom gem colors from RBVREnhanced, updated to set gems individually instead of all at once
 // TODO: FIND SUSTAIN COLOR
@@ -417,10 +418,12 @@ bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* col
     if (!enabled || !insong)
         return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, toset, param_6);
     
-    //final_printf("Color detected\n");
-    //final_printf("R: %f\n", toset->r);
-    //final_printf("G: %f\n", toset->g);
-    //final_printf("B: %f\n", toset->b);
+    //if (color == NULL) {
+    //    final_printf("Gem Color detected\n");
+    //    final_printf("R: %f\n", toset->r);
+    //    final_printf("G: %f\n", toset->g);
+    //    final_printf("B: %f\n", toset->b);
+    //}
 
     Color newcolorg;
     Color newcolorr;
@@ -480,6 +483,7 @@ int32_t attr_public module_start(size_t argc, const void *args)
 {
     if (sys_sdk_proc_info(&procInfo) != 0) {
         final_printf("shadPS4? assuming we're 02.21\n");
+        is_emu = true;
         // TODO: figure out version check and USTitleID check for shadPS4
     } else {
         final_printf("Started plugin! Title ID: %s\n", procInfo.titleid);
@@ -513,7 +517,7 @@ int32_t attr_public module_start(size_t argc, const void *args)
     GetArtist = (void*)(base_address + 0x00f28d30);
     RBMetaStateGoto = (void*)(base_address + 0x00bb5d40);
     SetMusicSpeed = (void*)(base_address + 0x00a470e0);
-    TscePadSetLightBar = (void*)(base_address + 0x012450d0);
+    //TscePadSetLightBar = (void*)(base_address + 0x012450d0);
     UpdateColors = (void*)(base_address + 0x00f94a70);
     DoSetColor = (void*)(base_address + 0x001a7320);
     DataExecuteString = (void*)(base_address + 0x0021f0e0);
@@ -526,7 +530,7 @@ int32_t attr_public module_start(size_t argc, const void *args)
     HOOK(GetArtist);
     HOOK(RBMetaStateGoto);
     HOOK(NewFile);
-    HOOK(TscePadSetLightBar);
+    //HOOK(TscePadSetLightBar);
     HOOK(UpdateColors);
     HOOK(DoSetColor);
 
@@ -544,7 +548,7 @@ int32_t attr_public module_stop(size_t argc, const void *args)
     UNHOOK(GetArtist);
     UNHOOK(RBMetaStateGoto);
     UNHOOK(NewFile);
-    UNHOOK(TscePadSetLightBar);
+    //(TscePadSetLightBar);
     UNHOOK(UpdateColors);
     UNHOOK(DoSetColor);
     return 0;

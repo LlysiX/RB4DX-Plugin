@@ -14,6 +14,7 @@ typedef struct {
     int value;
 } variable;
 
+extern bool is_emu;
 extern variable variables[100];
 extern int num_vars;
 
