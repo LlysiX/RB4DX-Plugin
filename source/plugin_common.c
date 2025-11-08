@@ -19,7 +19,7 @@ uint64_t get_base_address() {
     if (base_address != 0) {
         return base_address;
     }
-    if (is_emu) {
+    if (sys_sdk_proc_info(&procInfo) != 0) {
         // syscall failed, probably shadPS4
         base_address = SHADPS4_BASE;
     } else {
