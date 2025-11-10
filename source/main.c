@@ -118,14 +118,10 @@ void GameRestart_hook(void* thisGame, bool restart) {
     set_plugin_var("insong", 1);
     refreshrp = true;
     set_plugin_var("dontmodifyartist", 0);
-    float speed = 1.00;
     bool autoplay = (get_plugin_var("autoplay") != 0);
     bool drunkmode = (get_plugin_var("drunkmode") != 0);
-    bool speedfile = file_exists("/data/GoldHEN/RB4DX/speedmod.ini");
-
-    if (speedfile) {
-        speed = read_file_as_float("/data/GoldHEN/RB4DX/speedmod.ini");
-    }
+    int speedmod = get_plugin_var("speedmod");
+    float speed = (float)speedmod / 100;
 
     if (speed > 0.00 && speed != 1.00){
         SetMusicSpeed(thisGame, speed);
@@ -153,7 +149,7 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
         return  thisMetadata->mTitle;
 
     bool speedfile = file_exists("/data/GoldHEN/RB4DX/speedmod.ini");
-    float speed = 1.00;
+    int speed = get_plugin_var("speedmod");
     char speedtitleint[512] = {0};
     char speedtxt[512] = { 0 };
     char* speedtitle;
@@ -171,11 +167,6 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
     strcat(dmtitleint, drunkmodetitle);
     char* dmtitle = dmtitleint;
 
-
-    if (speedfile) {
-        speed = read_file_as_float("/data/GoldHEN/RB4DX/speedmod.ini") * 100;
-    }
-
     //final_printf("songtitle: %s\n", thisMetadata->mTitle);
     //final_printf("apsongtitle: %s\n", aptitle);
 
@@ -187,7 +178,7 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
         return dmtitle;
     else if (insong && speed > 0 && speed != 100) {
         // include " (x% Speed)" at the end of the song title
-        sprintf(speedtxt, " (%.0f%% Speed)", speed);
+        sprintf(speedtxt, " (%d%% Speed)", speed);
         strcat(speedtitleint, speedtxt);
         speedtitle = speedtitleint;
         return speedtitle;
