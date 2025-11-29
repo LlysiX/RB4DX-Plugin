@@ -414,12 +414,12 @@ bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* col
     int green = (int)(toset->g * 255);
     int blue = (int)(toset->b * 255);
 
-    if (color == NULL) {
-        final_printf("Gem Color detected\n");
-        final_printf("R: %d\n", red);
-        final_printf("G: %d\n", green);
-        final_printf("B: %d\n", blue);
-    }
+    //if (color == NULL) {
+    //    final_printf("Gem Color detected\n");
+    //    final_printf("R: %d\n", red);
+    //    final_printf("G: %d\n", green);
+    //    final_printf("B: %d\n", blue);
+    //}
 
     Color newcolorg;
     Color newcolorr;
