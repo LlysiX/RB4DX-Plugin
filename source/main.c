@@ -352,44 +352,45 @@ bool UpdateColors_hook(RBGemSmasherCom* thiscom) {
     if (!enabled)
         return r;
 
-    //final_printf("Smasher color detected!\n");
-    //final_printf("R: %f\n", thiscom->mColor.r);
-    //final_printf("G: %f\n", thiscom->mColor.g);
-    //final_printf("B: %f\n", thiscom->mColor.b);
+    int red = (int)(thiscom->mColor.r * 255);
+    int green = (int)(thiscom->mColor.g * 255);
+    int blue = (int)(thiscom->mColor.b * 255);
 
-    char coltest[9] = { 0 };
-    sprintf(coltest, "%f", thiscom->mColor.r);
+    //final_printf("Smasher color detected!\n");
+    //final_printf("R: %d\n", red);
+    //final_printf("G: %d\n", green);
+    //final_printf("B: %d\n", blue);
 
     //green
-    if (strcmp(coltest, "0.130136") == 0) {
+    if (red == 33) {
         thiscom->mColor.r = (float)get_plugin_var("gemcolgr") / 255;
         thiscom->mColor.g = (float)get_plugin_var("gemcolgg") / 255;
         thiscom->mColor.b = (float)get_plugin_var("gemcolgb") / 255;
         thiscom->mColor.a = 1.0;
     }
     //red
-    if (strcmp(coltest, "0.896269") == 0) {
+    if (red == 228) {
         thiscom->mColor.r = (float)get_plugin_var("gemcolrr") / 255;
         thiscom->mColor.g = (float)get_plugin_var("gemcolrg") / 255;
         thiscom->mColor.b = (float)get_plugin_var("gemcolrb") / 255;
         thiscom->mColor.a = 1.0;
     }
     //yellow
-    if (strcmp(coltest, "0.791298") == 0) {
+    if (red == 201) {
         thiscom->mColor.r = (float)get_plugin_var("gemcolyr") / 255;
         thiscom->mColor.g = (float)get_plugin_var("gemcolyg") / 255;
         thiscom->mColor.b = (float)get_plugin_var("gemcolyb") / 255;
         thiscom->mColor.a = 1.0;
     }
     //blue
-    if (strcmp(coltest, "0.011612") == 0) {
+    if (red == 2) {
         thiscom->mColor.r = (float)get_plugin_var("gemcolbr") / 255;
         thiscom->mColor.g = (float)get_plugin_var("gemcolbg") / 255;
         thiscom->mColor.b = (float)get_plugin_var("gemcolbb") / 255;
         thiscom->mColor.a = 1.0;
     }
     //orange
-    if (strcmp(coltest, "0.745404") == 0) {
+    if (red == 190) {
         thiscom->mColor.r = (float)get_plugin_var("gemcolor") / 255;
         thiscom->mColor.g = (float)get_plugin_var("gemcolog") / 255;
         thiscom->mColor.b = (float)get_plugin_var("gemcolob") / 255;
@@ -408,13 +409,17 @@ bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* col
     bool enabled = (get_plugin_var("gemcolors") != 0);
     if (!enabled || !insong)
         return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, toset, param_6);
-    
-    //if (color == NULL) {
-    //    final_printf("Gem Color detected\n");
-    //    final_printf("R: %f\n", toset->r);
-    //    final_printf("G: %f\n", toset->g);
-    //    final_printf("B: %f\n", toset->b);
-    //}
+
+    int red = (int)(toset->r * 255);
+    int green = (int)(toset->g * 255);
+    int blue = (int)(toset->b * 255);
+
+    if (color == NULL) {
+        final_printf("Gem Color detected\n");
+        final_printf("R: %d\n", red);
+        final_printf("G: %d\n", green);
+        final_printf("B: %d\n", blue);
+    }
 
     Color newcolorg;
     Color newcolorr;
@@ -422,13 +427,24 @@ bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* col
     Color newcolorb;
     Color newcoloro;
 
-    char coltest[9] = { 0 };
-    sprintf(coltest, "%f", toset->r);
     //none
-    if ((strcmp(coltest, "0.130136") != 0) && (strcmp(coltest, "0.242281") != 0) && (strcmp(coltest, "0.896269") != 0) && (strcmp(coltest, "0.791298") != 0) && (strcmp(coltest, "0.011612") != 0) && (strcmp(coltest, "0.004025") != 0) && (strcmp(coltest, "0.745404") != 0) && (strcmp(coltest, "0.814847") != 0))
+    if (
+        ((red != 33) && (green != 93) && (blue != 1)) &&   //green
+        ((red != 228) && (green != 4) && (blue != 8)) &&   //red
+        ((red != 201) && (green != 164) && (blue != 8)) && //yellow
+        ((red != 2) && (green != 82) && (blue != 139)) &&  //blue
+        ((red != 190) && (green != 47) && (blue != 4)) &&  //orange
+
+        ((red != 61) && (green != 134) && (blue != 0)) && //green
+        ((red != 228) && (green != 1) && (blue != 1)) &&  //red
+        ((red != 1) && (green != 53) && (blue != 107)) && //blue
+        ((red != 207) && (green != 38) && (blue != 1)) && //orange
+
+        ((red != 193) && (green != 176) && (blue != 147)) //OD
+       )
         return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, toset, param_6);
     //green
-    if ((strcmp(coltest, "0.130136") == 0) || (strcmp(coltest, "0.242281") == 0)) {
+    if (((red == 33) && (green == 93) && (blue == 1)) || ((red == 61) && (green == 134) && (blue == 0))) {
         newcolorg.r = (float)get_plugin_var("gemcolgr") / 255;
         newcolorg.g = (float)get_plugin_var("gemcolgg") / 255;
         newcolorg.b = (float)get_plugin_var("gemcolgb") / 255;
@@ -436,7 +452,7 @@ bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* col
         return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcolorg, param_6);
     }
     //red
-    if (strcmp(coltest, "0.896269") == 0) {
+    if (((red == 228) && (green == 4) && (blue == 8)) || ((red == 228) && (green == 1) && (blue == 1))) {
         newcolorr.r = (float)get_plugin_var("gemcolrr") / 255;
         newcolorr.g = (float)get_plugin_var("gemcolrg") / 255;
         newcolorr.b = (float)get_plugin_var("gemcolrb") / 255;
@@ -444,7 +460,7 @@ bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* col
         return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcolorr, param_6);
     }
     //yellow
-    if (strcmp(coltest, "0.791298") == 0) {
+    if (((red == 201) && (green == 164) && (blue == 8))) {
         newcolory.r = (float)get_plugin_var("gemcolyr") / 255;
         newcolory.g = (float)get_plugin_var("gemcolyg") / 255;
         newcolory.b = (float)get_plugin_var("gemcolyb") / 255;
@@ -452,7 +468,7 @@ bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* col
         return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcolory, param_6);
     }
     //blue
-    if ((strcmp(coltest, "0.011612") == 0) || (strcmp(coltest, "0.004025") == 0)) {
+    if (((red == 2) && (green == 82) && (blue == 139)) || ((red == 1) && (green == 53) && (blue == 107))) {
         newcolorb.r = (float)get_plugin_var("gemcolbr") / 255;
         newcolorb.g = (float)get_plugin_var("gemcolbg") / 255;
         newcolorb.b = (float)get_plugin_var("gemcolbb") / 255;
@@ -460,10 +476,18 @@ bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* col
         return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcolorb, param_6);
     }
     //orange
-    if ((strcmp(coltest, "0.745404") == 0) || (strcmp(coltest, "0.814847") == 0)) {
+    if (((red == 190) && (green == 47) && (blue == 4)) || ((red == 207) && (green == 38) && (blue == 1))) {
         newcoloro.r = (float)get_plugin_var("gemcolor") / 255;
         newcoloro.g = (float)get_plugin_var("gemcolog") / 255;
         newcoloro.b = (float)get_plugin_var("gemcolob") / 255;
+        newcoloro.a = 1.0;
+        return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcoloro, param_6);
+    }
+    //OD
+    if ((red == 193) && (green == 176) && (blue == 147)) {
+        newcoloro.r = (float)get_plugin_var("gemcolodr") / 255;
+        newcoloro.g = (float)get_plugin_var("gemcolodg") / 255;
+        newcoloro.b = (float)get_plugin_var("gemcolodb") / 255;
         newcoloro.a = 1.0;
         return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcoloro, param_6);
     }
