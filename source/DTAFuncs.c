@@ -350,6 +350,7 @@ const char* countdown_file_path = "/data/GoldHEN/RB4DX/ps4/ui/game/break_countdo
 const char* solo_file_path = "/data/GoldHEN/RB4DX/ps4/ui/game/solo_percentage.entity_ps4";
 const char* mtv_file_path = "/data/GoldHEN/RB4DX/ps4/ui/game/song_artist_overlay.entity_ps4";
 const char* practice_speed_file_path = "/data/GoldHEN/RB4DX/ps4/dx/track/practice_speed.dta_dta_ps4";
+const char* beatline_file_path = "/data/GoldHEN/RB4DX/ps4/track/shared/fret_unlit.entity_ps4";
 
 DataNode* DataWriteScoreFile(DataNode* ret, DataArray* args) {
     DataNode _firstArg = (args->mNodes->n[1]);
@@ -474,6 +475,17 @@ DataNode* DataWriteSoloFile(DataNode* ret, DataArray* args) {
     float pos[3] = { firstArg, secondArg, thirdArg };
 
     replace_floats(solo_file_path, 0x130C, pos, 3);
+
+    ret->mType = kDataInt;
+    ret->mValue.value = 1;
+    return ret;
+}
+
+DataNode* DataWriteBeatlineFile(DataNode* ret, DataArray* args) {
+    DataNode _firstArg = (args->mNodes->n[1]);
+    float firstArg = DataNodeFloat(&_firstArg, args);
+
+    replace_floats(beatline_file_path, 0x63A, &firstArg, 1);
 
     ret->mType = kDataInt;
     ret->mValue.value = 1;
@@ -629,6 +641,9 @@ void DataInitFuncs_hook() {
     // Write MTV file
     Symbol_Ctor(&funcsym, "write_mtv_file");
     DataRegisterFunc(funcsym, DataWriteMTVFile);
+    // Write Beatline file
+    Symbol_Ctor(&funcsym, "write_beatline_file");
+    DataRegisterFunc(funcsym, DataWriteBeatlineFile);
     // Set Practice Speed
     Symbol_Ctor(&funcsym, "set_practice_speed");
     DataRegisterFunc(funcsym, DataSetPracticeSpeed);
