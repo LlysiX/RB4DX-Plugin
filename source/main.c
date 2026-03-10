@@ -524,7 +524,7 @@ int32_t attr_public module_start(size_t argc, const void *args)
     uint64_t base_address = get_base_address();
 
     final_printf("Applying RB4DX hooks...\n");
-    DoNotificationStatic("RB4DX Plugin loaded!");
+    DoNotificationStatic("RB4DX Plugin loaded!\nIf you paid for this mod, you were SCAMMED");
 
     NewFile = (void*)(base_address + 0x00376d40);
     GameRestart = (void*)(base_address + 0x00a46710);
