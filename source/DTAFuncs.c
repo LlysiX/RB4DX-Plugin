@@ -410,6 +410,25 @@ DataNode* DataWriteCountdownFile(DataNode* ret, DataArray* args) {
     return ret;
 }
 
+DataNode* DataWriteVoxCountdownFile(DataNode* ret, DataArray* args) {
+    DataNode _firstArg = (args->mNodes->n[1]);
+    float firstArg = DataNodeFloat(&_firstArg, args);
+
+    DataNode _secondArg = (args->mNodes->n[2]);
+    float secondArg = DataNodeFloat(&_secondArg, args);
+
+    DataNode _thirdArg = (args->mNodes->n[3]);
+    float thirdArg = DataNodeFloat(&_thirdArg, args);
+
+    float pos[3] = { firstArg, secondArg, thirdArg };
+    
+    replace_floats(score_file_path, 0x440F, pos, 3);
+
+    ret->mType = kDataInt;
+    ret->mValue.value = 1;
+    return ret;
+}
+
 DataNode* DataWriteMTVFile(DataNode* ret, DataArray* args) {
     DataNode _firstArg = (args->mNodes->n[1]);
     float firstArg = DataNodeFloat(&_firstArg, args);
@@ -475,6 +494,25 @@ DataNode* DataWriteSoloFile(DataNode* ret, DataArray* args) {
     float pos[3] = { firstArg, secondArg, thirdArg };
 
     replace_floats(solo_file_path, 0x130C, pos, 3);
+
+    ret->mType = kDataInt;
+    ret->mValue.value = 1;
+    return ret;
+}
+
+DataNode* DataWriteVoxSoloFile(DataNode* ret, DataArray* args) {
+    DataNode _firstArg = (args->mNodes->n[1]);
+    float firstArg = DataNodeFloat(&_firstArg, args);
+
+    DataNode _secondArg = (args->mNodes->n[2]);
+    float secondArg = DataNodeFloat(&_secondArg, args);
+
+    DataNode _thirdArg = (args->mNodes->n[3]);
+    float thirdArg = DataNodeFloat(&_thirdArg, args);
+
+    float pos[3] = { firstArg, secondArg, thirdArg };
+
+    replace_floats(score_file_path, 0x3887, pos, 3);
 
     ret->mType = kDataInt;
     ret->mValue.value = 1;
@@ -638,6 +676,12 @@ void DataInitFuncs_hook() {
     // Write solo file
     Symbol_Ctor(&funcsym, "write_solo_file");
     DataRegisterFunc(funcsym, DataWriteSoloFile);
+    // Write vox countdown file
+    Symbol_Ctor(&funcsym, "write_vox_countdown_file");
+    DataRegisterFunc(funcsym, DataWriteVoxCountdownFile);
+    // Write vox solo file
+    Symbol_Ctor(&funcsym, "write_vox_solo_file");
+    DataRegisterFunc(funcsym, DataWriteVoxSoloFile);
     // Write MTV file
     Symbol_Ctor(&funcsym, "write_mtv_file");
     DataRegisterFunc(funcsym, DataWriteMTVFile);
