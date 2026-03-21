@@ -229,7 +229,10 @@ char* GetArtist_hook(SongMetadata* thisMetadata) {
     if (dontmodifyartist)
         return thisMetadata->mArtist;
 
-    DataNode ret;
+    DataNode ret = {
+        .mType = kDataInt,
+        .mValue.value = 0
+    };
     bool showartist = (get_plugin_var("noartisttxt") == 0);
     bool showcover = (get_plugin_var("covertxt") != 0);
     bool showalbum = (get_plugin_var("albumtxt") != 0);
@@ -282,7 +285,21 @@ char* GetArtist_hook(SongMetadata* thisMetadata) {
         strcat(rpexec, "}\")}}");
 
         DataExecuteString(&ret, rpexec);
+
+        char GenreLocalizedExec[1024] = { 0 };
+        strcat(GenreLocalizedExec, "{set_plugin_symvar genre {localize ");
+        strcat(GenreLocalizedExec, thisMetadata->mGenre);
+        strcat(GenreLocalizedExec, "}}");
+        DataExecuteString(&ret, GenreLocalizedExec);
+        char OriginLocalizedExec[1024] = { 0 };
+        strcat(OriginLocalizedExec, "{set_plugin_symvar origin {localize ");
+        strcat(OriginLocalizedExec, thisMetadata->mGameOrigin);
+        strcat(OriginLocalizedExec, "}}");
+        DataExecuteString(&ret, OriginLocalizedExec);
     }
+
+    Symbol GenreLocalized = get_plugin_symvar("genre");
+    Symbol OriginLocalized = get_plugin_symvar("origin");
 
     char detailedint[1024] = { 0 };
     //famous by/cover
@@ -307,7 +324,7 @@ char* GetArtist_hook(SongMetadata* thisMetadata) {
     //genre
     if (showgenre) {
         strcat(detailedint, "\n");
-        strcat(detailedint, thisMetadata->mGenre);
+        strcat(detailedint, GenreLocalized.sym);
     }
 
     if (showorigin) {
@@ -317,7 +334,7 @@ char* GetArtist_hook(SongMetadata* thisMetadata) {
         else {
             strcat(detailedint, " | ");
         }
-        strcat(detailedint, thisMetadata->mGameOrigin);
+        strcat(detailedint, OriginLocalized.sym);
     }
     char* detailed = detailedint;
     return detailed;

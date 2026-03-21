@@ -66,6 +66,8 @@ float read_file_as_float(const char* filename) {
 
 variable variables[100];
 int num_vars = 0;
+symvariable symvariables[100];
+int num_symvars = 0;
 
 void set_plugin_var(const char* name, int value) {
     // Check if the variable already exists
@@ -88,4 +90,31 @@ int get_plugin_var(const char* name) {
         }
     }
     return 0; // Not found, return 0
+}
+
+void set_plugin_symvar(const char* name, Symbol value) {
+    // Check if the variable already exists
+    for (int i = 0; i < num_symvars; i++) {
+        if (strcmp(symvariables[i].name, name) == 0) {
+            symvariables[i].value = value; // direct struct copy
+            return;
+        }
+    }
+
+    // Create new variable
+    strcpy(symvariables[num_symvars].name, name);
+    symvariables[num_symvars].value = value;
+    num_symvars++;
+}
+
+Symbol get_plugin_symvar(const char* name) {
+    for (int i = 0; i < num_symvars; i++) {
+        if (strcmp(symvariables[i].name, name) == 0) {
+            return symvariables[i].value;
+        }
+    }
+
+    // return empty symbol if not found
+    Symbol empty = { .sym = "" };
+    return empty;
 }

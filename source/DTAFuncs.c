@@ -608,6 +608,27 @@ DataNode* DataGetPluginVar(DataNode* ret, DataArray* args) {
     return ret;
 }
 
+DataNode* DataSetPluginSymVar(DataNode* ret, DataArray* args) {
+    DataNode _Arg1 = (args->mNodes->n[1]);
+    DataNode _Arg2 = (args->mNodes->n[2]);
+    Symbol Argsym = DataNodeForceSym(&_Arg1, args);
+    char* Arg1 = Argsym.sym;
+    Symbol Arg2 = DataNodeForceSym(&_Arg2, args);
+    set_plugin_symvar(Arg1, Arg2);
+    ret->mType = kDataInt;
+    ret->mValue.value = 1;
+    return ret;
+}
+
+DataNode* DataGetPluginSymVar(DataNode* ret, DataArray* args) {
+    DataNode _Arg = (args->mNodes->n[1]);
+    Symbol Argsym = DataNodeForceSym(&_Arg, args);
+    char* Arg = Argsym.sym;
+    ret->mType = kDataSymbol;
+    ret->mValue.symbol = get_plugin_symvar(Arg).sym;
+    return ret;
+}
+
 HOOK_INIT(DataInitFuncs);
 
 void DataInitFuncs_hook() {
@@ -712,6 +733,12 @@ void DataInitFuncs_hook() {
 
     Symbol_Ctor(&funcsym, "get_plugin_var");
     DataRegisterFunc(funcsym, DataGetPluginVar);
+    //symbol version
+    Symbol_Ctor(&funcsym, "set_plugin_symvar");
+    DataRegisterFunc(funcsym, DataSetPluginSymVar);
+
+    Symbol_Ctor(&funcsym, "get_plugin_symvar");
+    DataRegisterFunc(funcsym, DataGetPluginSymVar);
 
     //add original dta functions
     HOOK_CONTINUE(DataInitFuncs, void (*)());
