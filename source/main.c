@@ -166,9 +166,9 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
                 Symbol OriginLocalized = get_plugin_symvar("origin");
                 strcat(originint, " | ");
                 strcat(originint, OriginLocalized.sym);
-                char* origin = originint;
-                return origin;
             }
+            char* origin = originint;
+            return origin;
         }
     }
 
@@ -269,9 +269,9 @@ char* GetArtist_hook(SongMetadata* thisMetadata) {
                 Symbol OriginLocalizedA = get_plugin_symvar("origin");
                 strcat(originint, " | ");
                 strcat(originint, OriginLocalizedA.sym);
-                char* origin = originint;
-                return origin;
             }
+            char* origin = originint;
+            return origin;
         }
     }
 
