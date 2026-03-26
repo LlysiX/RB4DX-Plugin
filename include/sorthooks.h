@@ -1,0 +1,2 @@
+void InitSortHooks();
+void DestroySortHooks();

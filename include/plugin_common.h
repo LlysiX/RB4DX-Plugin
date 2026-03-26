@@ -21,6 +21,7 @@ typedef struct {
     Symbol value;
 } symvariable;
 
+extern bool sortingbyartist;
 extern bool is_emu;
 extern variable variables[100];
 extern int num_vars;

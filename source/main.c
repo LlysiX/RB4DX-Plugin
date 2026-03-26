@@ -20,6 +20,7 @@
 #include <orbis/Sysmodule.h>
 #include <orbis/Pad.h>
 #include "plugin_common.h"
+#include "sorthooks.h"
 #include "DTAFuncs.h"
 #include "Autoplay.h"
 #include "rb4/data.h"
@@ -145,8 +146,31 @@ HOOK_INIT(GetTitle);
 
 char* GetTitle_hook(SongMetadata* thisMetadata) {
     bool insong = (get_plugin_var("insong") != 0);
-    if (!insong)
-        return  thisMetadata->mTitle;
+    bool dontmodifyartist = (get_plugin_var("dontmodifyartist") != 0);
+    bool origininsongsel = (get_plugin_var("origininsongsel") != 0);
+    DataNode ret;
+    char originint[1024] = { 0 };
+    if (!insong) {
+        if (!sortingbyartist)
+            return thisMetadata->mTitle;
+        else if (dontmodifyartist) {
+            return thisMetadata->mTitle;
+        } else {
+            strcat(originint, thisMetadata->mTitle);
+            if (origininsongsel) {
+                char OriginLocalizedExec[1024] = { 0 };
+                strcat(OriginLocalizedExec, "{set_plugin_symvar origin {localize ");
+                strcat(OriginLocalizedExec, thisMetadata->mGameOrigin);
+                strcat(OriginLocalizedExec, "}}");
+                DataExecuteString(&ret, OriginLocalizedExec);
+                Symbol OriginLocalized = get_plugin_symvar("origin");
+                strcat(originint, " | ");
+                strcat(originint, OriginLocalized.sym);
+                char* origin = originint;
+                return origin;
+            }
+        }
+    }
 
     bool speedfile = file_exists("/data/GoldHEN/RB4DX/speedmod.ini");
     int speed = get_plugin_var("speedmod");
@@ -194,6 +218,8 @@ void RBMetaStateGoto_hook(void* thisMetaState, int state) {
     DataNode ret;
     if (state != 3 && state != 44 && state != 9 && get_plugin_var("insong") != 0)
         set_plugin_var("insong", 0);
+    if (state != 3 && state != 44 && state != 9 && get_plugin_var("dontmodifyartist") != 0)
+        set_plugin_var("dontmodifyartist", 0);
     if (state != 3 && state != 44 && state != 9)
         DataExecuteString(&ret, "{write_file 'data:/GoldHEN/RB4DX/discordrp.json' {array (\"{\\qGame mode\\q:\\qdefaults\\q}\")}}");
     return;
@@ -223,16 +249,36 @@ void fix_quotes(const char* input, char* output) {
 char* GetArtist_hook(SongMetadata* thisMetadata) {
     bool insong = (get_plugin_var("insong") != 0);
     bool dontmodifyartist = (get_plugin_var("dontmodifyartist") != 0);
-    if (!insong)
-        return thisMetadata->mArtist;
+    bool origininsongsel = (get_plugin_var("origininsongsel") != 0);
+
+    DataNode ret;
+    char originint[1024] = { 0 };
+    if (!insong) {
+        if (dontmodifyartist)
+            return thisMetadata->mArtist;
+        else if (sortingbyartist)
+            return thisMetadata->mArtist;
+        else {
+            strcat(originint, thisMetadata->mArtist);
+            if (origininsongsel) {
+                char OriginLocalizedExecA[1024] = { 0 };
+                strcat(OriginLocalizedExecA, "{set_plugin_symvar origin {localize ");
+                strcat(OriginLocalizedExecA, thisMetadata->mGameOrigin);
+                strcat(OriginLocalizedExecA, "}}");
+                DataExecuteString(&ret, OriginLocalizedExecA);
+                Symbol OriginLocalizedA = get_plugin_symvar("origin");
+                strcat(originint, " | ");
+                strcat(originint, OriginLocalizedA.sym);
+                char* origin = originint;
+                return origin;
+            }
+        }
+    }
+
     
     if (dontmodifyartist)
         return thisMetadata->mArtist;
 
-    DataNode ret = {
-        .mType = kDataInt,
-        .mValue.value = 0
-    };
     bool showartist = (get_plugin_var("noartisttxt") == 0);
     bool showcover = (get_plugin_var("covertxt") != 0);
     bool showalbum = (get_plugin_var("albumtxt") != 0);
@@ -557,6 +603,7 @@ int32_t attr_public module_start(size_t argc, const void *args)
     // apply all hooks
     InitDTAHooks();
     InitAutoplayHooks();
+    InitSortHooks();
     HOOK(GameRestart);
     HOOK(GetTitle);
     HOOK(GetArtist);
@@ -575,6 +622,7 @@ int32_t attr_public module_stop(size_t argc, const void *args)
     // unhook everything just in case
     DestroyDTAHooks();
     DestroyAutoplayHooks();
+    DestroySortHooks();
     UNHOOK(GameRestart);
     UNHOOK(GetTitle);
     UNHOOK(GetArtist);
