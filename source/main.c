@@ -140,7 +140,6 @@ void GameRestart_hook(void* thisGame, bool restart) {
 char* (*GetTitle)(SongMetadata*);
 const char* autoplaytitle = " (AUTOPLAY)";
 const char* drunkmodetitle = " (DRUNK MODE)";
-void(*RBMetaStateGoto)(void*, int);
 
 HOOK_INIT(GetTitle);
 
@@ -211,10 +210,15 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
         return thisMetadata->mTitle;
 }
 
+void(*RBMetaStateGoto)(void*, int);
+int settingsmasher = 0;
+
 HOOK_INIT(RBMetaStateGoto);
 
 void RBMetaStateGoto_hook(void* thisMetaState, int state) {
     HOOK_CONTINUE(RBMetaStateGoto, void (*)(void*, int), thisMetaState, state);
+    if (state == 3 || state == 44 || state == 9)
+        settingsmasher = 0;
     DataNode ret;
     if (state != 3 && state != 44 && state != 9 && get_plugin_var("insong") != 0)
         set_plugin_var("insong", 0);
@@ -463,6 +467,20 @@ bool UpdateColors_hook(RBGemSmasherCom* thiscom) {
     return r;
 }
 
+void fix_blue_smasher(float *r, float *g, float *b) {
+    float max = *r;
+    if (*g > max) max = *g;
+    if (*b > max) max = *b;
+    if (max == 0.0f) return;
+    //makes the highest color 0.5, which seems the brightest the blue smasher can do
+    float scale = 0.5f / max;
+
+    *r *= scale;
+    *g *= scale;
+    *b *= scale;
+    return;
+}
+
 bool (*DoSetColor)(void* component, void* proppath, void* propinfo, Color* color, Color* toset, bool param_6);
 
 HOOK_INIT(DoSetColor);
@@ -470,12 +488,25 @@ HOOK_INIT(DoSetColor);
 bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* color, Color* toset, bool param_6) {
     bool insong = (get_plugin_var("insong") != 0);
     bool enabled = (get_plugin_var("gemcolors") != 0);
-    if (!enabled || !insong)
+    if (!insong)
         return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, toset, param_6);
-
+    
+    //fix blue smasher color
     int red = (int)(toset->r * 255);
     int green = (int)(toset->g * 255);
     int blue = (int)(toset->b * 255);
+    Color bluesmasherfix;
+    if (!enabled && ((color != NULL) || (settingsmasher <= 5)) && ((red == 2) && (green == 82) && (blue == 139))) {
+        settingsmasher++;
+        bluesmasherfix.r = toset->r;
+        bluesmasherfix.g = toset->g;
+        bluesmasherfix.b = toset->b;
+        fix_blue_smasher(&bluesmasherfix.r, &bluesmasherfix.g, &bluesmasherfix.b);
+        bluesmasherfix.a = 1.0;
+        return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &bluesmasherfix, param_6);
+    }
+    if (!enabled)
+        return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, toset, param_6);
 
     //if (color == NULL) {
     //    final_printf("Gem Color detected\n");
@@ -529,6 +560,16 @@ bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* col
         newcolory.b = (float)get_plugin_var("gemcolyb") / 255;
         newcolory.a = 1.0;
         return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcolory, param_6);
+    }
+    //blue smasher
+    if (((color != NULL) || (settingsmasher <= 5)) && ((red == 2) && (green == 82) && (blue == 139))) {
+        settingsmasher++;
+        newcolorb.r = (float)get_plugin_var("gemcolbr") / 255;
+        newcolorb.g = (float)get_plugin_var("gemcolbg") / 255;
+        newcolorb.b = (float)get_plugin_var("gemcolbb") / 255;
+        fix_blue_smasher(&newcolorb.r, &newcolorb.g, &newcolorb.b);
+        newcolorb.a = 1.0;
+        return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcolorb, param_6);
     }
     //blue
     if (((red == 2) && (green == 82) && (blue == 139)) || ((red == 1) && (green == 53) && (blue == 107))) {
