@@ -314,6 +314,12 @@ DataNode* DataIsEmulator(DataNode* ret, DataArray* args) {
     return ret;
 }
 
+DataNode* DataIsNeo(DataNode* ret, DataArray* args) {
+    ret->mType = kDataInt;
+    ret->mValue.value = sceKernelHasNeoMode();
+    return ret;
+}
+
 typedef union _FloatInt {
     float f;
     unsigned int i;
@@ -672,6 +678,11 @@ void DataInitFuncs_hook() {
     // Emulation check
     Symbol_Ctor(&funcsym, "is_emu");
     DataRegisterFunc(funcsym, DataIsEmulator);
+    // PS4 Pro/neo check
+    Symbol_Ctor(&funcsym, "is_neo");
+    DataRegisterFunc(funcsym, DataIsNeo);
+    Symbol_Ctor(&funcsym, "is_ps4_pro");
+    DataRegisterFunc(funcsym, DataIsNeo);
 
     // Float to Hex
     Symbol_Ctor(&funcsym, "float_to_int");
