@@ -26,6 +26,7 @@
 #include "rb4/data.h"
 #include "rb4/songmetadata.h"
 #include "rb4/gemsmasher.h"
+#include "rb4/calibration.h"
 
 attr_public const char *g_pluginName = PLUGIN_NAME;
 attr_public const char *g_pluginDesc = "Plugin for loading Rock Band 4 Deluxe files, among other enhancements.";
@@ -598,6 +599,103 @@ bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* col
     return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, toset, param_6);
 }
 
+float(*GetPadExtraLag)(JoypadType, LagContext);
+HOOK_INIT(GetPadExtraLag);
+float GetPadExtraLag_hook(JoypadType JoypadType, LagContext LagContext) {
+    //final_printf("joypadtype: %d\n", JoypadType);
+    float fVar1;
+    if (LagContext == kVCal) {
+        switch (JoypadType) {
+        case kJoypadXboxDrums:
+        case kJoypadXboxDrumsRb2:
+        case kJoypadXboxRoDrums:
+        case kJoypadPs3HxDrums:
+        case kJoypadPs3HxDrumsRb2:
+        case kJoypadPs3RoDrums:
+        case kJoypadPs3KonamiDrums:
+        case kJoypadXboxMidiBoxDrums:
+        case kJoypadPs3MidiBoxDrums:
+        case kJoypadGlamorganDrums:
+        case kJoypadXboxDrumsRb2Usb:
+            fVar1 = GetPadExtraLag_hook(JoypadType, kACal);
+            return (fVar1 + 12.0) - 28.0;
+        default:
+            fVar1 = GetPadExtraLag_hook(JoypadType, kACal);
+            return fVar1 + 12.0;
+        }
+    }
+    switch (JoypadType) {
+    case kJoypadAnalog:
+    case kJoypadDigital:
+    case kJoypadDualShock:
+        if (LagContext != kACal) {
+            return (float)get_plugin_var("pad_extra_lag");
+        }
+        return 0.0;
+    case kJoypadPs3HxGuitar:
+        if (LagContext != kACal) {
+            return (float)get_plugin_var("rb1_guitar_extra_lag");
+        }
+        return -15.0;
+    case kJoypadPs3HxGuitarRb2:
+        if (LagContext != kACal) {
+            return (float)get_plugin_var("rb2_guitar_extra_lag");
+        }
+        return -33.0;
+    case kJoypadPs3RoGuitar:
+        if (LagContext != kACal) {
+            return (float)get_plugin_var("gh_guitar_extra_lag");
+        }
+        return -5.0;
+    case kJoypadPs4PembrokeGuitar:
+        if (LagContext != kACal) {
+            return (float)get_plugin_var("rb4_strat_extra_lag");
+        }
+        return -1.0;
+    case kJoypadPs4PDPPembrokeGuitar:
+        if (LagContext != kACal) {
+            return (float)get_plugin_var("rb4_jag_extra_lag");
+        }
+        return -1.0;
+    case kJoypadPs3HxDrums:
+        if (LagContext != kACal) {
+            return (float)get_plugin_var("rb1_drums_extra_lag");
+        }
+        return 14.0;
+    case kJoypadPs3HxDrumsRb2:
+        if (LagContext != kACal) {
+            return (float)get_plugin_var("rb2_drums_extra_lag");
+        }
+        return 14.0;
+    case kJoypadPs3RoDrums:
+        if (LagContext != kACal) {
+            return (float)get_plugin_var("gh_drums_extra_lag");
+        }
+        return 14.0;
+    case kJoypadPs3KonamiDrums:
+        if (LagContext != kACal) {
+            return (float)get_plugin_var("rr_drums_extra_lag");
+        }
+        return 14.0;
+    case kJoypadPs3MidiBoxDrums:
+        if (LagContext != kACal) {
+            return (float)get_plugin_var("mpa_drums_extra_lag");
+        }
+        return 14.0;
+    case kJoypadGlamorganDrums:
+        if (LagContext != kACal) {
+            return (float)get_plugin_var("rb4_drums_extra_lag");
+        }
+        return 14.0;
+    default:
+        if (LagContext != kACal) {
+            return (float)get_plugin_var("pad_extra_lag");
+        }
+        return 14.0;
+    }
+    return 1.0;
+}
+
 int32_t attr_public module_start(size_t argc, const void *args)
 {
     if (sys_sdk_proc_info(&procInfo) != 0) {
@@ -640,6 +738,7 @@ int32_t attr_public module_start(size_t argc, const void *args)
     UpdateColors = (void*)(base_address + 0x00f94a70);
     DoSetColor = (void*)(base_address + 0x001a7320);
     DataExecuteString = (void*)(base_address + 0x0021f0e0);
+    GetPadExtraLag = (void*)(base_address + 0x003901f0);
 
     // apply all hooks
     InitDTAHooks();
@@ -653,6 +752,7 @@ int32_t attr_public module_start(size_t argc, const void *args)
     //HOOK(TscePadSetLightBar);
     HOOK(UpdateColors);
     HOOK(DoSetColor);
+    HOOK(GetPadExtraLag);
 
     return 0;
 }
@@ -672,5 +772,6 @@ int32_t attr_public module_stop(size_t argc, const void *args)
     //(TscePadSetLightBar);
     UNHOOK(UpdateColors);
     UNHOOK(DoSetColor);
+    UNHOOK(GetPadExtraLag);
     return 0;
 }
