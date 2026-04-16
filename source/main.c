@@ -696,13 +696,14 @@ float GetPadExtraLag_hook(JoypadType JoypadType, LagContext LagContext) {
     return 1.0;
 }
 
-void(*ApplyCameraShake)(long, long, char(*)[32], long);
+void(*ApplyCameraShake)(long, void*, void*, void*);
 HOOK_INIT(ApplyCameraShake);
-void ApplyCameraShake_hook(long param_1, long param_2, char (*param_3) [32], long param_4) {
+int warmup = 0;
+void ApplyCameraShake_hook(long param_1, void* param_2, void* param_3, void* param_4) {
     bool noshake = (get_plugin_var("noshake") != 0);
     if (noshake)
         return;
-    HOOK_CONTINUE(ApplyCameraShake, void (*)(long, long, char(*)[32], long), param_1, param_2, param_3, param_4);
+    HOOK_CONTINUE(ApplyCameraShake, void (*)(long, void*, void*, void*), param_1, param_2, param_3, param_4);
     return;
 }
 
@@ -749,7 +750,7 @@ int32_t attr_public module_start(size_t argc, const void *args)
     DoSetColor = (void*)(base_address + 0x001a7320);
     DataExecuteString = (void*)(base_address + 0x0021f0e0);
     GetPadExtraLag = (void*)(base_address + 0x003901f0);
-    ApplyCameraShake = (void*)(base_address + 0x0104a810);
+    ApplyCameraShake = (void*)(base_address + 0x0104c480);
 
     // apply all hooks
     InitDTAHooks();
