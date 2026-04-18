@@ -352,7 +352,7 @@ char* GetArtist_hook(SongMetadata* thisMetadata) {
     Symbol GenreLocalized = get_plugin_symvar("genre");
     Symbol OriginLocalized = get_plugin_symvar("origin");
 
-    char detailedint[1024] = { 0 };
+    char detailedint[2048] = { 0 };
     //famous by/cover
     if (showcover && thisMetadata->mIsCoverRecording)
         strcat(detailedint, famousby);
