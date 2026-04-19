@@ -82,6 +82,7 @@ void InitSortHooks()
     //temporary sort by stars patch to fix the sorting by artist check
     //this is not good but it works so /shrug
     char SortByStarsPatch[] = { 0xe9, 0x1f, 0x01, 0x00, 0x00 };
+    sceKernelMprotect(SortByStars, sizeof(SortByStarsPatch), VM_PROT_ALL);
     memcpy(SortByStars, SortByStarsPatch, sizeof(SortByStarsPatch));
 
     HOOK(SortByArtist);
