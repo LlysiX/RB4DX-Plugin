@@ -36,14 +36,49 @@ int SortByStars_hook(void* song1, void* song2) {
     return HOOK_CONTINUE(SortByStars, int (*)(void*, void*), song1, song2);
 }
 /*
+SongMetadata*(*GetSongMetadata)(void*, void*, int);
+void(*TheSongMgr);
+int(*CompareStrings)(char*, char*, bool);
+void(*SongMgrLoadSongCache)(void*, void*);
+HOOK_INIT(SongMgrLoadSongCache);
+void SongMgrLoadSongCache_hook(void* SongMgr, void* param_2) {
+    if (TheSongMgr == NULL)
+        TheSongMgr = SongMgr;
+    final_printf("loadsongcache, %X\n", SongMgr);
+    HOOK_CONTINUE(SongMgrLoadSongCache, void (*)(void*, void*), SongMgr, param_2);
+    return;
+}
+HOOK_INIT(GetSongMetadata);
+SongMetadata* GetSongMetadata_hook(void* param1, void* param2, int param3) {
+    //final_printf("GetSongMetadata, %X\n", param1);
+    return HOOK_CONTINUE(GetSongMetadata, SongMetadata* (*)(void*, void*, int), param1, param2, param3);
+}
+*/
 long(*SortByDateAcquired)(void*, void*);
+void(*sortbysourcepatchloc1);
+void(*sortbysourcepatchloc2);
 HOOK_INIT(SortByDateAcquired);
 long SortByDateAcquired_hook(void* song1, void* song2) {
-    sortingbyartist = false;
+    char sortbysourcepatch1[] = { 0xe8, 0x95, 0x2e, 0x28, 0x00, 0x48, 0x89, 0xdf, 0x49, 0x89, 0xc4, 0xe8, 0x8a, 0x2e, 0x28, 0x00 };
+    sceKernelMprotect(sortbysourcepatchloc1, sizeof(sortbysourcepatch1), VM_PROT_ALL);
+    memcpy(sortbysourcepatchloc1, sortbysourcepatch1, sizeof(sortbysourcepatch1));
+    /*char sortbysourcepatch2[] = { 0x66, 0xe9, 0xac, 0xfe };
+    sceKernelMprotect(sortbysourcepatchloc2, sizeof(sortbysourcepatch2), VM_PROT_ALL);
+    memcpy(sortbysourcepatchloc2, sortbysourcepatch2, sizeof(sortbysourcepatch2));*/
+    int ret = HOOK_CONTINUE(SortByArtist, int (*)(void*, void*), song1, song2);
+    char sortbysourceunpatch1[] = { 0xe8, 0xb5, 0x2e, 0x28, 0x00, 0x48, 0x89, 0xdf, 0x49, 0x89, 0xc4, 0xe8, 0xaa, 0x2e, 0x28, 0x00 };
+    sceKernelMprotect(sortbysourcepatchloc1, sizeof(sortbysourceunpatch1), VM_PROT_ALL);
+    memcpy(sortbysourcepatchloc1, sortbysourceunpatch1, sizeof(sortbysourceunpatch1));
+    /*char sortbysourceunpatch2[] = { 0x49, 0x8b, 0x7d, 0x00 };
+    sceKernelMprotect(sortbysourcepatchloc2, sizeof(sortbysourceunpatch2), VM_PROT_ALL);
+    memcpy(sortbysourcepatchloc2, sortbysourceunpatch2, sizeof(sortbysourceunpatch2));*/
     //final_printf("SortByDateAcquired\n");
-    return HOOK_CONTINUE(SortByDateAcquired, long (*)(void*, void*), song1, song2);
+    sortingbyartist = false;
+    return ret;
 }
 
+
+/*
 long(*SortByDifficulty)(void*, void*);
 HOOK_INIT(SortByDifficulty);
 long SortByDifficulty_hook(void* song1, void* song2) {
@@ -68,6 +103,8 @@ long SortByPlayCount_hook(void* song1, void* song2) {
     return HOOK_CONTINUE(SortByPlayCount, long (*)(void*, void*), song1, song2);
 }
 */
+
+/*
 bool filteringbysource = false;
 Symbol(*GetDecade)(SongMetadata*);
 HOOK_INIT(GetDecade);
@@ -164,6 +201,19 @@ void FilterBySource_hook(void* param1, void* param2) {
     return;
 }
 
+void(*HeaderTextPatchLoc);
+Symbol(*GetHeaderText)(int, void*);
+HOOK_INIT(GetHeaderText);
+Symbol GetHeaderText_hook(int sortingmethod, void* param_2) {
+    //final_printf("ght");
+    Symbol ret;
+    if (sortingmethod == 2) {
+        Symbol_Ctor(&ret, "SORTING BY CUSTOM SOURCE IS POSSIBLE");
+        return ret;
+    }
+    return HOOK_CONTINUE(GetHeaderText, Symbol (*)(int, void*), sortingmethod, param_2);
+}
+*/
 
 void InitSortHooks()
 {
@@ -171,23 +221,31 @@ void InitSortHooks()
 
     SortByArtist = (void*)(base_address + 0x00ca5e30);
     SortByTitle = (void*)(base_address + 0x00ca5d60);
-    //SortByDateAcquired = (void*)(base_address + 0x00ca5fd0);
+    SortByDateAcquired = (void*)(base_address + 0x00ca5fd0);
+    sortbysourcepatchloc1 = (void*)(base_address + 0x00ca5e76);
+    sortbysourcepatchloc2 = (void*)(base_address + 0x00ca5eb0);
     SortByStars = (void*)(base_address + 0x00ca5f8c); //supposed to be 0x00ca5f80
     //SortByDifficulty = (void*)(base_address + 0x00ca60b0);
     //SortByRating = (void*)(base_address + 0x00ca6100);
     //SortByPlayCount = (void*)(base_address + 0x00ca6120);
-    GetDecade = (void*)(base_address + 0x00f29190);
-    FilterByDecade = (void*)(base_address + 0x00c7e120);
-    FilterBySourcePatchLoc1 = (void*)(base_address + 0x00c7e167);
-    FilterBySourcePatchLoc2 = (void*)(base_address + 0x00c7e278);
-    FilterBySourcePatchLoc3 = (void*)(base_address + 0x00c7e286);
-    FilterBySourcePatchLoc4 = (void*)(base_address + 0x00c7e292);
-    FilterBySourcePatchLoc5 = (void*)(base_address + 0x00c7e2b2);
-    FilterBySourcePatchLoc6 = (void*)(base_address + 0x00c7e2c5);
-    FilterBySourcePatchLoc7 = (void*)(base_address + 0x00c7e2f2);
-    FilterBySourcePatchLoc8 = (void*)(base_address + 0x00c7e2fb);
-    FilterBySourcePatchLoc9 = (void*)(base_address + 0x00c7e30f);
-    FilterBySource = (void*)(base_address + 0x00c7e690);
+    //GetSongMetadata = (void*)(base_address + 0x00f2e650);
+    //GetSource = (void*)(base_address + 0x00f28d10);
+    //CompareStrings = (void*)(base_address + 0x00ca5950);
+    //SongMgrLoadSongCache = (void*)(base_address + 0x00f2d1e0);
+    //GetDecade = (void*)(base_address + 0x00f29190);
+    //FilterByDecade = (void*)(base_address + 0x00c7e120);
+    //FilterBySourcePatchLoc1 = (void*)(base_address + 0x00c7e167);
+    //FilterBySourcePatchLoc2 = (void*)(base_address + 0x00c7e278);
+    //FilterBySourcePatchLoc3 = (void*)(base_address + 0x00c7e286);
+    //FilterBySourcePatchLoc4 = (void*)(base_address + 0x00c7e292);
+    //FilterBySourcePatchLoc5 = (void*)(base_address + 0x00c7e2b2);
+    //FilterBySourcePatchLoc6 = (void*)(base_address + 0x00c7e2c5);
+    //FilterBySourcePatchLoc7 = (void*)(base_address + 0x00c7e2f2);
+    //FilterBySourcePatchLoc8 = (void*)(base_address + 0x00c7e2fb);
+    //FilterBySourcePatchLoc9 = (void*)(base_address + 0x00c7e30f);
+    //FilterBySource = (void*)(base_address + 0x00c7e690);
+    //HeaderTextPatchLoc = (void*)(base_address + 0x00ca6ff6);
+    //GetHeaderText = (void*)(base_address + 0x00ca6fa0);
 
     //temporary sort by stars patch to fix the sorting by artist check
     //this is not good but it works so /shrug
@@ -197,7 +255,9 @@ void InitSortHooks()
 
     HOOK(SortByArtist);
     HOOK(SortByTitle);
-    //HOOK(SortByDateAcquired);
+    HOOK(SortByDateAcquired);
+    //HOOK(SongMgrLoadSongCache);
+    //HOOK(GetSongMetadata);
     //HOOK(SortByStars);
     //HOOK(SortByDifficulty);
     //HOOK(SortByRating);
@@ -205,13 +265,14 @@ void InitSortHooks()
     //HOOK(GetDecade);
     //HOOK(FilterByDecade);
     //HOOK(FilterBySource);
+    //HOOK(GetHeaderText);
 }
 
 void DestroySortHooks()
 {
     UNHOOK(SortByArtist);
     UNHOOK(SortByTitle);
-    //UNHOOK(SortByDateAcquired);
+    UNHOOK(SortByDateAcquired);
     //UNHOOK(SortByStars);
     //UNHOOK(SortByDifficulty);
     //UNHOOK(SortByRating);
@@ -219,4 +280,5 @@ void DestroySortHooks()
     //UNHOOK(GetDecade);
     //UNHOOK(FilterByDecade);
     //UNHOOK(FilterBySource);
+    //UNHOOK(GetHeaderText);
 }
