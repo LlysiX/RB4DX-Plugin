@@ -202,9 +202,9 @@ void InitSortHooks()
     //HOOK(SortByDifficulty);
     //HOOK(SortByRating);
     //HOOK(SortByPlayCount);
-    HOOK(GetDecade);
-    HOOK(FilterByDecade);
-    HOOK(FilterBySource);
+    //HOOK(GetDecade);
+    //HOOK(FilterByDecade);
+    //HOOK(FilterBySource);
 }
 
 void DestroySortHooks()
@@ -216,7 +216,7 @@ void DestroySortHooks()
     //UNHOOK(SortByDifficulty);
     //UNHOOK(SortByRating);
     //UNHOOK(SortByPlayCount);
-    UNHOOK(GetDecade);
-    UNHOOK(FilterByDecade);
-    UNHOOK(FilterBySource);
+    //UNHOOK(GetDecade);
+    //UNHOOK(FilterByDecade);
+    //UNHOOK(FilterBySource);
 }
