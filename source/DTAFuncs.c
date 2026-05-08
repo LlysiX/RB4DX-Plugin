@@ -21,7 +21,7 @@
 int cp(const char* to, const char* from)
 {
     int fd_to, fd_from;
-    char buf[4096] = { 0 };
+    char buf[1048576] = { 0 };
     ssize_t nread;
     int saved_errno;
 
@@ -58,7 +58,6 @@ int cp(const char* to, const char* from)
         }
         close(fd_from);
 
-        /* Success! */
         return 0;
     }
 

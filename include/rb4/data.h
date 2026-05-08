@@ -130,3 +130,5 @@ typedef struct _SystemOptions {
         undefined field56_0x47;
         char mStore[0x68];
 } SystemOptions;
+
+extern Symbol(*Symbol_Ctor)(Symbol*, const char*);
