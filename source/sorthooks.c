@@ -224,7 +224,7 @@ void InitSortHooks()
 
     SortByArtist = (void*)(base_address + 0x00ca5e30);
     SortByTitle = (void*)(base_address + 0x00ca5d60);
-    SortByDateAcquired = (void*)(base_address + 0x00ca5fd0);
+    //SortByDateAcquired = (void*)(base_address + 0x00ca5fd0);
     //sortbysourcepatchloc1 = (void*)(base_address + 0x00ca5e76);
     //sortbysourcepatchloc2 = (void*)(base_address + 0x00ca5eb0);
     SortByStars = (void*)(base_address + 0x00ca5f8c); //supposed to be 0x00ca5f80
