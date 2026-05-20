@@ -70,6 +70,7 @@ Symbol(*Symbol_Ctor)(Symbol*, const char*);
 void(*DataInitFuncs)();
 void(*DataRegisterFunc)(Symbol, DataFunc);
 DataNode* (*DataArrayEvaluate)(DataNode*, DataArray*, size_t);
+DataNode* (*DataNodeEvaluate)(DataNode*, DataNode*);
 Symbol(*DataNodeForceSym)(DataNode*, DataArray*);
 int (*DataNodeInt)(DataNode*, DataArray*);
 float (*DataNodeFloat)(DataNode*, DataArray*);
@@ -793,22 +794,38 @@ void RBSystemOptionsSave_hook(void* thisoptions, void* binstream) {
     return;
 }
 
+bool (*SetFocusByData)(void*, Symbol, DataNode*);
+bool (*SetFocusByDataIndex)(void*, int, bool);
+HOOK_INIT(SetFocusByData);
+bool SetFocusByData_hook(void* thisUIList, Symbol focussym, DataNode* focustype) {
+    if (strcmp(focussym.sym, "dx_index") == 0) {
+        DataArray array;
+        int index = DataNodeInt(focustype, &array);
+        return SetFocusByDataIndex(thisUIList, index, false);
+    }
+    return HOOK_CONTINUE(SetFocusByData, bool (*)(void*, Symbol, DataNode*), thisUIList, focussym, focustype);
+}
+
 void InitDTAHooks() {
     uint64_t base_address = get_base_address();
 
     DataInitFuncs = (void*)(base_address + 0x00222350);
     DataRegisterFunc = (void*)(base_address + 0x002221f0);
     DataArrayEvaluate = (void*)(base_address + 0x000c7d30);
+    DataNodeEvaluate = (void*)(base_address + 0x00234f10);
     DataNodeForceSym = (void*)(base_address + 0x0000e850);
     DataNodeFloat = (void*)(base_address + 0x0000ee30);
     DataNodeInt = (void*)(base_address + 0x00000eb40);
     Symbol_Ctor = (void*)(base_address + 0x00256fd0);
     SystemOptionsLoad = (void*)(base_address + 0x011b2310);
     RBSystemOptionsSave = (void*)(base_address + 0x00d667c0);
+    SetFocusByData = (void*)(base_address + 0x008b9540);
+    SetFocusByDataIndex = (void*)(base_address + 0x008b8560);
 
     HOOK(DataInitFuncs);
     HOOK(SystemOptionsLoad);
     HOOK(RBSystemOptionsSave);
+    HOOK(SetFocusByData);
 }
 
 void DestroyDTAHooks() {
