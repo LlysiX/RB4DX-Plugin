@@ -709,34 +709,18 @@ void ApplyCameraShake_hook(long param_1, void* param_2, void* param_3, void* par
 
 int32_t attr_public module_start(size_t argc, const void *args)
 {
-    if (sys_sdk_proc_info(&procInfo) != 0) {
-        final_printf("shadPS4? assuming we're 02.21\n");
-        is_emu = true;
-        // TODO: figure out version check and USTitleID check for shadPS4
-    } else {
-        final_printf("Started plugin! Title ID: %s\n", procInfo.titleid);
-        if (strcmp(procInfo.titleid, "CUSA02084") == 0) {
-            final_printf("US Rock Band 4 Detected!\n");
-            USTitleID = true;
-        }
-        else if (strcmp(procInfo.titleid, "CUSA02901") == 0) {
-            final_printf("EU Rock Band 4 Detected!\n");
-            USTitleID = false;
-        }
-        else {
-            final_printf("Game loaded is not Rock Band 4!\n");
-            return 0;
-        }
-        
-        if (strcmp(procInfo.version, "02.21") != 0) {
-            final_printf("This plugin is only compatible with version 02.21 of Rock Band 4.\n");
-            return 0;
-        }
-    }
-
     uint64_t base_address = get_base_address();
 
-    final_printf("Applying RB4DX hooks...\n");
+    if (is_emu) {
+        final_printf("ShadPS4 Detected!\n");
+    }
+
+    if (base_address == 0) {
+        final_printf("Couldn't get eboot base address!\n");
+        return 0;
+    }
+
+    final_printf("Applying RB4DX hooks, base addr: 0x%lx\n", base_address);
     DoNotificationStatic("RB4DX Plugin loaded!\nIf you paid for this mod, you were SCAMMED");
 
     NewFile = (void*)(base_address + 0x00376d40);

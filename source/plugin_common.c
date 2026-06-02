@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <GoldHEN/Common.h>
+#include <orbis/libkernel.h>
 #include "plugin_common.h"
 #include <fcntl.h>
 #include <unistd.h>
@@ -19,11 +20,53 @@ uint64_t get_base_address() {
     if (base_address != 0) {
         return base_address;
     }
-    if (sys_sdk_proc_info(&procInfo) != 0) {
-        // syscall failed, probably shadPS4
-        base_address = SHADPS4_BASE;
-    } else {
-        base_address = procInfo.base_address;
+    OrbisKernelModuleInfoEx info;
+    memset(&info, 0, sizeof(info));
+    info.size = sizeof(info);
+    OrbisAppInfo appinfo;
+    memset(&appinfo, 0, sizeof(appinfo));
+    sceKernelGetAppInfo(0, &appinfo);
+    for (pid_t moduleId = 0; moduleId <= 1024; moduleId++)
+    {
+        if (sceKernelGetAppInfo(moduleId, &appinfo) < 0)
+            continue;
+
+        if (!(appinfo.TitleId[0] == '\0')) {
+            is_emu = false; // if a title id was found, its not shadps4 (getappinfo doesn't work)
+            //final_printf("app info: titleid: %s\n", appinfo.TitleId);
+            if (strcmp(appinfo.TitleId, "CUSA02084") == 0) {
+                final_printf("US Rock Band 4 Detected!\n");
+            }
+            else if (strcmp(appinfo.TitleId, "CUSA02901") == 0) {
+                final_printf("EU Rock Band 4 Detected!\n");
+            }
+            else {
+                final_printf("Game loaded is not Rock Band 4!\n");
+                return 0;
+            }
+            break;
+        }
+        else {
+            is_emu = true;
+        }
+    }
+    for (int moduleId = 0; moduleId < 1024; moduleId++)
+    {
+        if (sceKernelGetModuleInfoInternal(moduleId, &info) < 0)
+            continue;
+
+        if (is_emu) {
+            if (strcmp(info.name, "rockband_ps4_s.sprx") == 0) {
+                base_address = (uint64_t)info.segmentInfo[0].address;
+                break;
+            }
+        }
+        
+        if (strcmp(info.name, "eboot.bin") == 0)
+        {
+            base_address = (uint64_t)info.segmentInfo[0].address;
+            break;
+        }
     }
     return base_address;
 }
