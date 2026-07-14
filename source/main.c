@@ -19,6 +19,7 @@
 #include <orbis/libkernel.h>
 #include <orbis/Sysmodule.h>
 #include <orbis/Pad.h>
+//#include <math.h>
 #include "plugin_common.h"
 #include "sorthooks.h"
 #include "DTAFuncs.h"
@@ -112,12 +113,15 @@ void NewFile_hook(const char* path, FileMode mode) {
 //speed hack
 void(*GameRestart)(void*, bool);
 void(*SetMusicSpeed)(void*, float);
-
+//float slopsum = 0.0f;
+//int slopcount = 0;
 HOOK_INIT(GameRestart);
 
 void GameRestart_hook(void* thisGame, bool restart) {
     HOOK_CONTINUE(GameRestart, void (*)(void*, bool), thisGame, restart);
     set_plugin_var("insong", 1);
+    //slopsum = 0;
+    //slopcount = 0;
     refreshrp = true;
     set_plugin_var("dontmodifyartist", 0);
     bool autoplay = (get_plugin_var("autoplay") != 0);
@@ -698,13 +702,87 @@ float GetPadExtraLag_hook(JoypadType JoypadType, LagContext LagContext) {
 
 void(*ApplyCameraShake)(long, void*, void*, void*);
 HOOK_INIT(ApplyCameraShake);
-int warmup = 0;
 void ApplyCameraShake_hook(long param_1, void* param_2, void* param_3, void* param_4) {
     bool noshake = (get_plugin_var("noshake") != 0);
     if (noshake)
         return;
     HOOK_CONTINUE(ApplyCameraShake, void (*)(long, void*, void*, void*), param_1, param_2, param_3, param_4);
     return;
+}
+
+//bool(*InSlopWindow)(void*, float, float);
+//HOOK_INIT(InSlopWindow);
+//bool InSlopWindow_hook(void* param_1, float param_2, float param_3) {
+//    float syncoffset = *(float*)((char*)param_1 + 0x70);
+//    float slop = *(float*)((char*)param_1 + 0x38);
+//    bool isin = fabsf((param_3 + syncoffset - param_2)) <= slop;
+//    if (isin) {
+//        final_printf("MS OFFSET: %f\n", (param_3 + syncoffset - param_2));
+//        //final_printf("slop: %f\n", slop);
+//        slopsum += (param_3 + syncoffset - param_2);
+//        slopcount++;
+//        final_printf("Current average: %f\n", slopsum / slopcount);
+//        //final_printf("%f\n", fabsf((param_3 + syncoffset - param_2)));
+//    }
+//    return isin;
+//}
+//
+//void* Detour_DetourFunctionspecial(Detour* This, uint64_t FunctionPtr, void* HookPtr) {
+//
+//    uint32_t InstructionSize = Detour_GetInstructionSize(This, FunctionPtr, sizeof(This->JumpInstructions64));
+//
+//    int res = sceKernelMmap(0, sizeof(This->JumpInstructions64), VM_PROT_ALL, 0x1000 | 0x2, -1, 0, &This->TrampolinePtr);
+//
+//    if (res < 0 || This->TrampolinePtr == 0) {
+//        return 0;
+//    }
+//
+//    Detour_WriteJump64(This, This->TrampolinePtr, (uint64_t)HookPtr);
+//
+//    // Save Pointers for later
+//    This->FunctionPtr = (void*)FunctionPtr;
+//    This->HookPtr = HookPtr;
+//
+//    // Set protection.
+//    sceKernelMprotect((void*)FunctionPtr, InstructionSize, VM_PROT_ALL);
+//
+//    //Allocate Executable memory for stub and write instructions to stub and a jump back to original execution.
+//    This->StubSize = (InstructionSize + sizeof(This->JumpInstructions64));
+//    res = sceKernelMmap(0, This->StubSize, VM_PROT_ALL, 0x1000 | 0x2, -1, 0, &This->StubPtr);
+//
+//    if (res < 0 || This->StubPtr == 0) {
+//        return 0;
+//    }
+//
+//    memcpy(This->StubPtr, (void*)FunctionPtr, InstructionSize);
+//    Detour_WriteJump64(This, (void*)((uint64_t)This->StubPtr + InstructionSize), (uint64_t)(FunctionPtr + InstructionSize));
+//
+//    // Write jump from function to hook.
+//    memset((void*)FunctionPtr, 0x90, InstructionSize);
+//    Detour_WriteJump64(This, (void*)FunctionPtr, (uint64_t)This->TrampolinePtr);
+//
+//#if (DEBUG) == 0
+//    klog("[Detour] %s: Detour Written Successfully! (FunctionPtr: %p - HookPtr: %p - HookPtrTrampoline: %p - StubPtr: %p - StubSize: %zu)\n", __FUNCTION__, This->FunctionPtr, This->HookPtr, This->TrampolinePtr, This->StubPtr, This->StubSize);
+//#endif
+//
+//    return This->StubPtr;
+//}
+
+bool(*IsEmoteCamGroup)(void*);
+HOOK_INIT(IsEmoteCamGroup);
+bool IsEmoteCamGroup_hook(void* param_1) {
+    int force = get_plugin_var("player_intros");
+    if (force == 1)
+        return true;
+    //HOOK_CONTINUE doesn't work here so I just copied the ghidra pseudocode
+    //this sucks - LX
+    if (*(char*)(param_1 + 0x8990) == '\0') {
+        return false;
+    }
+    if (*(char*)(param_1 + 0x8991) != '\0') {
+        return false;
+    }
+    return *(char*)(param_1 + 0xb54) != '\0';
 }
 
 int32_t attr_public module_start(size_t argc, const void *args)
@@ -735,6 +813,8 @@ int32_t attr_public module_start(size_t argc, const void *args)
     DataExecuteString = (void*)(base_address + 0x0021f0e0);
     GetPadExtraLag = (void*)(base_address + 0x003901f0);
     ApplyCameraShake = (void*)(base_address + 0x0104c480);
+    //InSlopWindow = (void*)(base_address + 0x01230e30);
+    IsEmoteCamGroup = (void*)(base_address + 0x00d2a250);
 
     // apply all hooks
     InitDTAHooks();
@@ -750,6 +830,11 @@ int32_t attr_public module_start(size_t argc, const void *args)
     HOOK(DoSetColor);
     HOOK(GetPadExtraLag);
     HOOK(ApplyCameraShake);
+    HOOK(IsEmoteCamGroup);
+    //Detour_Construct(&Detour_InSlopWindow, DetourMode_x64);
+    //Detour_DetourFunctionspecial(&Detour_InSlopWindow, (uint64_t)InSlopWindow, (void*)(&InSlopWindow_hook));
+
+    //HOOK(InSlopWindow);
 
     return 0;
 }
