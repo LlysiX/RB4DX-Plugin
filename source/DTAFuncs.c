@@ -355,8 +355,6 @@ const char* score_file_path = "/data/GoldHEN/RB4DX/ps4/ui/game/hud.scene_ps4";
 const char* countdown_file_path = "/data/GoldHEN/RB4DX/ps4/ui/game/break_countdown.entity_ps4";
 const char* solo_file_path = "/data/GoldHEN/RB4DX/ps4/ui/game/solo_percentage.entity_ps4";
 const char* mtv_file_path = "/data/GoldHEN/RB4DX/ps4/ui/game/song_artist_overlay.entity_ps4";
-const char* practice_speed_file_path = "/data/GoldHEN/RB4DX/ps4/dx/track/practice_speed.dta_dta_ps4";
-const char* beatline_file_path = "/data/GoldHEN/RB4DX/ps4/track/shared/fret_unlit.entity_ps4";
 
 DataNode* DataWriteScoreFile(DataNode* ret, DataArray* args) {
     DataNode _firstArg = (args->mNodes->n[1]);
@@ -525,22 +523,36 @@ DataNode* DataWriteVoxSoloFile(DataNode* ret, DataArray* args) {
     return ret;
 }
 
-DataNode* DataWriteBeatlineFile(DataNode* ret, DataArray* args) {
+DataNode* DataReplaceFloat(DataNode* ret, DataArray* args) {
     DataNode _firstArg = (args->mNodes->n[1]);
-    float firstArg = DataNodeFloat(&_firstArg, args);
+    Symbol firstArgsym = DataNodeForceSym(&_firstArg, args);
+    char* firstArg = firstArgsym.sym;
+    DataNode _secondArg = (args->mNodes->n[2]);
+    int secondArg = DataNodeInt(&_secondArg, args);
+    DataNode _thirdArg = (args->mNodes->n[3]);
+    float thirdArg = DataNodeFloat(&_thirdArg, args);
 
-    replace_floats(beatline_file_path, 0x63A, &firstArg, 1);
+    replace_floats(firstArg, secondArg, &thirdArg, 1);
 
     ret->mType = kDataInt;
     ret->mValue.value = 1;
     return ret;
 }
 
-DataNode* DataSetPracticeSpeed(DataNode* ret, DataArray* args) {
+DataNode* DataReplaceByte(DataNode* ret, DataArray* args) {
     DataNode _firstArg = (args->mNodes->n[1]);
-    float firstArg = DataNodeFloat(&_firstArg, args);
+    Symbol firstArgsym = DataNodeForceSym(&_firstArg, args);
+    char* firstArg = firstArgsym.sym;
+    DataNode _secondArg = (args->mNodes->n[2]);
+    int secondArg = DataNodeInt(&_secondArg, args);
+    DataNode _thirdArg = (args->mNodes->n[3]);
+    int thirdArg = DataNodeInt(&_thirdArg, args);
 
-    replace_floats(practice_speed_file_path, 0x39, &firstArg, 1);
+    int binaryfile = open(firstArg, O_RDWR);
+    unsigned char byte = thirdArg;
+    lseek(binaryfile, secondArg, SEEK_SET);
+    write(binaryfile, &byte, 1);
+    close(binaryfile);
 
     ret->mType = kDataInt;
     ret->mValue.value = 1;
@@ -717,12 +729,12 @@ void DataInitFuncs_hook() {
     // Write MTV file
     Symbol_Ctor(&funcsym, "write_mtv_file");
     DataRegisterFunc(funcsym, DataWriteMTVFile);
-    // Write Beatline file
-    Symbol_Ctor(&funcsym, "write_beatline_file");
-    DataRegisterFunc(funcsym, DataWriteBeatlineFile);
-    // Set Practice Speed
-    Symbol_Ctor(&funcsym, "set_practice_speed");
-    DataRegisterFunc(funcsym, DataSetPracticeSpeed);
+    // Replace Float in Binary File
+    Symbol_Ctor(&funcsym, "replace_float");
+    DataRegisterFunc(funcsym, DataReplaceFloat);
+    // Replace byte in Binary File
+    Symbol_Ctor(&funcsym, "replace_byte");
+    DataRegisterFunc(funcsym, DataReplaceByte);
 
     // get calibration offset in dta in ms
     Symbol_Ctor(&funcsym, "get_audio_calibration");
