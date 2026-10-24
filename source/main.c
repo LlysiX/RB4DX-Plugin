@@ -410,69 +410,7 @@ char* GetArtist_hook(SongMetadata* thisMetadata) {
 //    return;
 //}
 
-// Custom gem colors from RBVREnhanced, updated to set gems individually instead of all at once
-// TODO: FIND SUSTAIN COLOR
-
-bool(*UpdateColors)(RBGemSmasherCom* thiscom);
-
-HOOK_INIT(UpdateColors);
-
-bool UpdateColors_hook(RBGemSmasherCom* thiscom) {
-
-    bool enabled = (get_plugin_var("gemcolors") != 0);
-    bool r = HOOK_CONTINUE(UpdateColors, bool(*)(RBGemSmasherCom*), thiscom);
-    if (!enabled)
-        return r;
-
-    int red = (int)(thiscom->mColor.r * 255);
-    int green = (int)(thiscom->mColor.g * 255);
-    int blue = (int)(thiscom->mColor.b * 255);
-
-    //final_printf("Smasher color detected!\n");
-    //final_printf("R: %d\n", red);
-    //final_printf("G: %d\n", green);
-    //final_printf("B: %d\n", blue);
-
-    //green
-    if (red == 33) {
-        thiscom->mColor.r = (float)get_plugin_var("gemcolgr") / 255;
-        thiscom->mColor.g = (float)get_plugin_var("gemcolgg") / 255;
-        thiscom->mColor.b = (float)get_plugin_var("gemcolgb") / 255;
-        thiscom->mColor.a = 1.0;
-    }
-    //red
-    if (red == 228) {
-        thiscom->mColor.r = (float)get_plugin_var("gemcolrr") / 255;
-        thiscom->mColor.g = (float)get_plugin_var("gemcolrg") / 255;
-        thiscom->mColor.b = (float)get_plugin_var("gemcolrb") / 255;
-        thiscom->mColor.a = 1.0;
-    }
-    //yellow
-    if (red == 201) {
-        thiscom->mColor.r = (float)get_plugin_var("gemcolyr") / 255;
-        thiscom->mColor.g = (float)get_plugin_var("gemcolyg") / 255;
-        thiscom->mColor.b = (float)get_plugin_var("gemcolyb") / 255;
-        thiscom->mColor.a = 1.0;
-    }
-    //blue
-    if (red == 2) {
-        thiscom->mColor.r = (float)get_plugin_var("gemcolbr") / 255;
-        thiscom->mColor.g = (float)get_plugin_var("gemcolbg") / 255;
-        thiscom->mColor.b = (float)get_plugin_var("gemcolbb") / 255;
-        thiscom->mColor.a = 1.0;
-    }
-    //orange
-    if (red == 190) {
-        thiscom->mColor.r = (float)get_plugin_var("gemcolor") / 255;
-        thiscom->mColor.g = (float)get_plugin_var("gemcolog") / 255;
-        thiscom->mColor.b = (float)get_plugin_var("gemcolob") / 255;
-        thiscom->mColor.a = 1.0;
-    }
-
-    return r;
-}
-
-void fix_blue_smasher(float *r, float *g, float *b) {
+void fix_blue_smasher(float* r, float* g, float* b) {
     float max = *r;
     if (*g > max) max = *g;
     if (*b > max) max = *b;
@@ -486,6 +424,65 @@ void fix_blue_smasher(float *r, float *g, float *b) {
     return;
 }
 
+// Custom gem colors from RBVREnhanced, updated to set gems individually instead of all at once
+// TODO: FIND SUSTAIN COLOR
+
+bool(*UpdateColors)(RBGemSmasherCom* thiscom);
+
+HOOK_INIT(UpdateColors);
+
+bool UpdateColors_hook(RBGemSmasherCom* thiscom) {
+    bool enabled = (get_plugin_var("gemcolors") != 0);
+    int red = (int)(thiscom->mColor.r * 255);
+    //int green = (int)(thiscom->mColor.g * 255);
+    //int blue = (int)(thiscom->mColor.b * 255);
+    if (enabled) {
+        //final_printf("Smasher color detected!\n");
+        //final_printf("R: %d\n", red);
+        //final_printf("G: %d\n", green);
+        //final_printf("B: %d\n", blue);
+
+        //green
+        if (red == 33) {
+            thiscom->mColor.r = (float)get_plugin_var("gemcolgr") / 255;
+            thiscom->mColor.g = (float)get_plugin_var("gemcolgg") / 255;
+            thiscom->mColor.b = (float)get_plugin_var("gemcolgb") / 255;
+            thiscom->mColor.a = 1.0;
+        }
+        //red
+        if (red == 228) {
+            thiscom->mColor.r = (float)get_plugin_var("gemcolrr") / 255;
+            thiscom->mColor.g = (float)get_plugin_var("gemcolrg") / 255;
+            thiscom->mColor.b = (float)get_plugin_var("gemcolrb") / 255;
+            thiscom->mColor.a = 1.0;
+        }
+        //yellow
+        if (red == 201) {
+            thiscom->mColor.r = (float)get_plugin_var("gemcolyr") / 255;
+            thiscom->mColor.g = (float)get_plugin_var("gemcolyg") / 255;
+            thiscom->mColor.b = (float)get_plugin_var("gemcolyb") / 255;
+            thiscom->mColor.a = 1.0;
+        }
+        //blue
+        if (red == 2) {
+            thiscom->mColor.r = (float)get_plugin_var("gemcolbr") / 255;
+            thiscom->mColor.g = (float)get_plugin_var("gemcolbg") / 255;
+            thiscom->mColor.b = (float)get_plugin_var("gemcolbb") / 255;
+            thiscom->mColor.a = 1.0;
+        }
+        //orange
+        if (red == 190) {
+            thiscom->mColor.r = (float)get_plugin_var("gemcolor") / 255;
+            thiscom->mColor.g = (float)get_plugin_var("gemcolog") / 255;
+            thiscom->mColor.b = (float)get_plugin_var("gemcolob") / 255;
+            thiscom->mColor.a = 1.0;
+        }
+    }
+    if (red == 2) //its better to fix the blue smasher color here to avoid color conflicts
+        fix_blue_smasher(&thiscom->mColor.r, &thiscom->mColor.g, &thiscom->mColor.b);
+    return HOOK_CONTINUE(UpdateColors, bool(*)(RBGemSmasherCom*), thiscom);
+}
+
 bool (*DoSetColor)(void* component, void* proppath, void* propinfo, Color* color, Color* toset, bool param_6);
 
 HOOK_INIT(DoSetColor);
@@ -495,23 +492,12 @@ bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* col
     bool enabled = (get_plugin_var("gemcolors") != 0);
     if (!insong)
         return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, toset, param_6);
-    
-    //fix blue smasher color
+    if (!enabled)
+        return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, toset, param_6);
+
     int red = (int)(toset->r * 255);
     int green = (int)(toset->g * 255);
     int blue = (int)(toset->b * 255);
-    Color bluesmasherfix;
-    if (!enabled && ((color != NULL) || (settingsmasher <= 5)) && ((red == 2) && (green == 82) && (blue == 139))) {
-        settingsmasher++;
-        bluesmasherfix.r = toset->r;
-        bluesmasherfix.g = toset->g;
-        bluesmasherfix.b = toset->b;
-        fix_blue_smasher(&bluesmasherfix.r, &bluesmasherfix.g, &bluesmasherfix.b);
-        bluesmasherfix.a = 1.0;
-        return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &bluesmasherfix, param_6);
-    }
-    if (!enabled)
-        return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, toset, param_6);
 
     //if (color == NULL) {
     //    final_printf("Gem Color detected\n");
@@ -542,6 +528,15 @@ bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* col
         ((red != 193) && (green != 176) && (blue != 147)) //OD
        )
         return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, toset, param_6);
+    //smasher (already set colors, dont set again)
+    if ((color != NULL) &&
+        ((red == get_plugin_var("gemcolgr")) && (green == get_plugin_var("gemcolgg")) && (blue == get_plugin_var("gemcolgb"))) ||   //green
+        ((red == get_plugin_var("gemcolrr")) && (green == get_plugin_var("gemcolrg")) && (blue == get_plugin_var("gemcolrb"))) ||   //red
+        ((red == get_plugin_var("gemcolyr")) && (green == get_plugin_var("gemcolyg")) && (blue == get_plugin_var("gemcolyb"))) || //yellow
+        ((red == get_plugin_var("gemcolbr")) && (green == get_plugin_var("gemcolbg")) && (blue == get_plugin_var("gemcolbb"))) || //blue
+        ((red == get_plugin_var("gemcolor")) && (green == get_plugin_var("gemcolog")) && (blue == get_plugin_var("gemcolob"))) //orange
+        )
+        return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, toset, param_6);
     //green
     if (((red == 33) && (green == 93) && (blue == 1)) || ((red == 61) && (green == 134) && (blue == 0))) {
         newcolorg.r = (float)get_plugin_var("gemcolgr") / 255;
@@ -565,16 +560,6 @@ bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* col
         newcolory.b = (float)get_plugin_var("gemcolyb") / 255;
         newcolory.a = 1.0;
         return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcolory, param_6);
-    }
-    //blue smasher
-    if (((color != NULL) || (settingsmasher <= 5)) && ((red == 2) && (green == 82) && (blue == 139))) {
-        settingsmasher++;
-        newcolorb.r = (float)get_plugin_var("gemcolbr") / 255;
-        newcolorb.g = (float)get_plugin_var("gemcolbg") / 255;
-        newcolorb.b = (float)get_plugin_var("gemcolbb") / 255;
-        fix_blue_smasher(&newcolorb.r, &newcolorb.g, &newcolorb.b);
-        newcolorb.a = 1.0;
-        return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcolorb, param_6);
     }
     //blue
     if (((red == 2) && (green == 82) && (blue == 139)) || ((red == 1) && (green == 53) && (blue == 107))) {
