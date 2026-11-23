@@ -26,9 +26,9 @@ existing features or adding new ones.
 
 ## LLM Policy
 
-Responsible usage of LLMs to contribute code into RB3Enhanced is highly
+Responsible usage of LLMs to contribute code into RB4DX-Plugin is highly
 discouraged, but allowed. When working on and submitting pull requests to
-RB3Enhanced using Large Language Models (or "Generative AI"), please keep the
+RB4DX-Plugin using Large Language Models (or "Generative AI"), please keep the
 following in mind:
 
 * **Purely "agentic" PRs with no human involvement are strictly forbidden and
